@@ -74,13 +74,44 @@ def getgroup():
 def getstation():
     return default_station
 
-def listFiles(dimensions):
-    result, _ = getURL(baseurl + '/files/list', {'dims':dimensions})
+def listFiles(dimensions=None, defname=None):
+    if defname is not None:
+        result, _ = getURL(baseurl + '/definitions/name/%s/files/list' % defname)
+    else:
+        result, _ = getURL(baseurl + '/files/list', {'dims':dimensions})
     return [ l.strip() for l in result.split('\n') if l ]
 
-def countFiles(dimensions):
-    result, _ = getURL(baseurl + '/files/count', {'dims':dimensions})
+def countFiles(dimensions=None, defname=None):
+    if defname is not None:
+        result, _ = getURL(baseurl + '/definitions/name/%s/files/count' % defname)
+    else:
+        result, _ = getURL(baseurl + '/files/count', {'dims':dimensions})
     return long(result.strip())
+
+def listDefinitions(**queryCriteria):
+    result, _ = getURL(baseurl + '/definitions/list', queryCriteria)
+    return [ l.strip() for l in result.split('\n') if l ]
+
+def descDefinition(defname):
+    result, _ = getURL(baseurl + '/definitions/name/' + defname + '/describe')
+    return result.strip()
+
+def createDefinition(defname, dims, user=None, group=None, description=None):
+
+    params = { "defname": defname,
+             "dims": dims,
+             "user": user or getuser(),
+             "group": group or getgroup(),
+             }
+    if description:
+        params["description"] = description
+
+    result, _ = postURL(baseurl + '/definitions/create', params)
+    return result.strip()
+
+def deleteDefinition(defname):
+    result, _ = postURL(baseurl + '/definitions/name/%s/delete' % defname, {})
+    return result.strip()
 
 def makeProject(defname, project, station=None, user=None, group=None):
     if not station: station = getstation()
@@ -161,6 +192,7 @@ class CmdBase(object):
         pass
 
 class listFilesCmd(CmdBase):
+
     def run(self, options, args):
         dims = (' '.join(args)).strip()
         if not dims:
@@ -174,6 +206,70 @@ class countFilesCmd(CmdBase):
         if not dims:
             raise CmdError("No dimensions specified")
         print countFiles(dims)
+
+class listDefinitionsCmd(CmdBase):
+    def addOptions(self, parser):
+        parser.add_option("--defname", dest="defname")
+        parser.add_option("--user", dest="user")
+        parser.add_option("--group", dest="group")
+        parser.add_option("--after", dest="after")
+        parser.add_option("--before", dest="before")
+
+    def run(self, options, args):
+        args = {}
+        if options.defname:
+            args['defname'] = options.defname
+        if options.user:
+            args['user'] = options.user
+        if options.group:
+            args['group'] = options.group
+        if options.after:
+            args['after'] = options.after
+        if options.before:
+            args['before'] = options.before
+        for l in listDefinitions(**args):
+            print l
+
+class descDefinitionCmd(CmdBase):
+
+    def run(self, options, args):
+        if len(args) != 1:
+            raise CmdError("Argument should be exactly one definition name")
+        print descDefinition(args[0])
+
+class listDefinitionFilesCmd(CmdBase):
+    def run(self, options, args):
+        if len(args) != 1:
+            raise CmdError("Argument should be exactly one definition name")
+        for filename in listFiles(defname=args[0]):
+            print filename
+
+class countDefinitionFilesCmd(CmdBase):
+    def run(self, options, args):
+        if len(args) != 1:
+            raise CmdError("Argument should be exactly one definition name")
+        print countFiles(defname=args[0])
+
+class createDefinitionCmd(CmdBase):
+    def addOptions(self, parser):
+        parser.add_option("--defname", dest="defname")
+        parser.add_option("--user", dest="user")
+        parser.add_option("--group", dest="group")
+        parser.add_option("--description", dest="description")
+
+    def run(self, options, args):
+        dims = ' '.join(args)
+        if not dims:
+            raise CmdError("No dimensions specified")
+        if not options.defname:
+            raise CmdError("Must specify defname")
+        return createDefinition(options.defname, dims, options.user, options.group, options.description)
+
+class deleteDefinitionCmd(CmdBase):
+    def run(self, options, args):
+        if len(args) != 1:
+            raise CmdError("Argument should be exactly one definition name")
+        return deleteDefinition(args[0])
 
 class startProjectCmd(CmdBase):
     def addOptions(self, parser):
@@ -300,6 +396,12 @@ class releaseFileCmd(ProcessCmd):
 commands = {
         "list-files": listFilesCmd,
         "count-files": countFilesCmd,
+        "list-definitions": listDefinitionsCmd,
+        "describe-definition": descDefinitionCmd,
+        "list-definition-files": listDefinitionFilesCmd,
+        "count-definition-files": countDefinitionFilesCmd,
+        "create-definition": createDefinitionCmd,
+        "delete-definition": deleteDefinitionCmd,
         "start-project": startProjectCmd,
         "find-project": findProjectCmd,
         "stop-project": stopProjectCmd,
