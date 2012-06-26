@@ -74,6 +74,14 @@ def getgroup():
 def getstation():
     return default_station
 
+def listFiles(dimensions):
+    result, _ = getURL(baseurl + '/files/list', {'dims':dimensions})
+    return [ l.strip() for l in result.split('\n') if l ]
+
+def countFiles(dimensions):
+    result, _ = getURL(baseurl + '/files/count', {'dims':dimensions})
+    return long(result.strip())
+
 def makeProject(defname, project, station=None, user=None, group=None):
     if not station: station = getstation()
     if not user: user = getuser()
@@ -148,7 +156,26 @@ def runProject():
 
 class CmdError(Error): pass
 
-class startProjectCmd(object):
+class CmdBase(object):
+    def addOptions(self, parser):
+        pass
+
+class listFilesCmd(CmdBase):
+    def run(self, options, args):
+        dims = (' '.join(args)).strip()
+        if not dims:
+            raise CmdError("No dimensions specified")
+        for filename in listFiles(dims):
+            print filename
+
+class countFilesCmd(CmdBase):
+    def run(self, options, args):
+        dims = (' '.join(args)).strip()
+        if not dims:
+            raise CmdError("No dimensions specified")
+        print countFiles(dims)
+
+class startProjectCmd(CmdBase):
     def addOptions(self, parser):
         parser.add_option("--project", dest="project")
         parser.add_option("--defname", dest="defname")
@@ -169,7 +196,7 @@ class startProjectCmd(object):
         else:
             print rval["project"]
 
-class findProjectCmd(object):
+class findProjectCmd(CmdBase):
     def addOptions(self, parser):
         parser.add_option("--project", dest="project")
 
@@ -180,7 +207,7 @@ class findProjectCmd(object):
         rval = findProject(options.project)
         print rval
 
-class stopProjectCmd(object):
+class stopProjectCmd(CmdBase):
     def addOptions(self, parser):
 
         parser.add_option("--project", dest="project")
@@ -196,7 +223,7 @@ class stopProjectCmd(object):
 
         stopProject(projecturl)
 
-class startProcessCmd(object):
+class startProcessCmd(CmdBase):
     def addOptions(self, parser):
         parser.add_option("--project", dest="project")
         parser.add_option("--projecturl", dest="projecturl")
@@ -227,7 +254,7 @@ class startProcessCmd(object):
         else:
             print rval
 
-class ProcessCmd(object):
+class ProcessCmd(CmdBase):
 
     def addOptions(self, parser):
         parser.add_option("--project", dest="project")
@@ -270,12 +297,15 @@ class releaseFileCmd(ProcessCmd):
         if not status: status = 'ok'
         releaseFile(processurl, options.filename)
 
-commands = { "start-project": startProjectCmd,
-             "find-project": findProjectCmd,
-         "stop-project": stopProjectCmd,
-         "start-process": startProcessCmd,
-         "get-next-file": getNextFileCmd,
-         "release-file": releaseFileCmd,
+commands = {
+        "list-files": listFilesCmd,
+        "count-files": countFilesCmd,
+        "start-project": startProjectCmd,
+        "find-project": findProjectCmd,
+        "stop-project": stopProjectCmd,
+        "start-process": startProcessCmd,
+        "get-next-file": getNextFileCmd,
+        "release-file": releaseFileCmd,
        }
 
 def coreusage():
