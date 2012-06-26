@@ -276,7 +276,7 @@ class startProjectCmd(CmdBase):
         parser.add_option("--project", dest="project")
         parser.add_option("--defname", dest="defname")
         parser.add_option("--group", dest="group")
-        parser.add_option("--url", action="store_true", dest="url")
+        #parser.add_option("--url", action="store_true", dest="url")
 
     def run(self, options, args):
         if not options.defname:
@@ -287,10 +287,7 @@ class startProjectCmd(CmdBase):
             now = time.strftime("%Y%m%d%H%M%S")
             project = "%s_%s_%s" % ( os.environ["USER"],defname, now)
         rval = makeProject(defname, project, group=options.group)
-        if options.url:
-            print rval["projectURL"]
-        else:
-            print rval["project"]
+        print rval["projectURL"]
 
 class findProjectCmd(CmdBase):
     def addOptions(self, parser):
@@ -314,8 +311,10 @@ class stopProjectCmd(CmdBase):
         projecturl = None
         if options.projecturl:
             projecturl = options.projecturl
-        if not projecturl:
-            raise CmdError("Must specify project url")
+        elif options.project:
+            projecturl = findProject(options.project)
+        else:
+            raise CmdError("Must specify project name or url")
 
         stopProject(projecturl)
 
