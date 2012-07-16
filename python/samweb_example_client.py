@@ -5,9 +5,18 @@ from urllib2 import urlopen, URLError, HTTPError
 
 import time,os, socket, sys, optparse, user, pwd
 
-baseurl = "http://samweb.fnal.gov:20004/sam/minerva/api"
-default_group = 'minerva'
-default_station = 'minerva'
+try:
+    baseurl = os.environ['SAM_WEB_BASE_URL']
+except KeyError:
+    baseurl = "http://samweb.fnal.gov:20004/sam/minerva/api"
+try:
+    default_group = os.environ['SAM_GROUP']
+except KeyError:
+    default_group = 'minerva'
+try:
+    default_station = os.environ['SAM_STATION']
+except KeyError:
+    default_station = 'minerva'
 
 class Error(Exception):
   pass
@@ -80,6 +89,11 @@ def listFiles(dimensions=None, defname=None):
     else:
         result, _ = getURL(baseurl + '/files/list', {'dims':dimensions})
     return [ l.strip() for l in result.split('\n') if l ]
+
+def parseDims(dimensions):
+    """ For debugging only """
+    result, _ = getURL(baseurl + '/files/list', {'dims':dimensions, "parse_only": "1"})
+    return result.strip()
 
 def countFiles(dimensions=None, defname=None):
     if defname is not None:
@@ -193,12 +207,18 @@ class CmdBase(object):
 
 class listFilesCmd(CmdBase):
 
+    def addOptions(self, parser):
+        parser.add_option("--parse-only", action="store_true", dest="parse_only", default=False)
+
     def run(self, options, args):
         dims = (' '.join(args)).strip()
         if not dims:
             raise CmdError("No dimensions specified")
-        for filename in listFiles(dims):
-            print filename
+        if options.parse_only:
+            print parseDims(dims)
+        else:
+            for filename in listFiles(dims):
+                print filename
 
 class countFilesCmd(CmdBase):
     def run(self, options, args):
