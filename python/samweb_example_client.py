@@ -87,12 +87,20 @@ def listFiles(dimensions=None, defname=None):
     if defname is not None:
         result, _ = getURL(baseurl + '/definitions/name/%s/files/list' % defname)
     else:
-        result, _ = getURL(baseurl + '/files/list', {'dims':dimensions})
+        if len(dimensions) > 1024:
+            method = postURL
+        else:
+            method = getURL
+        result, _ = method(baseurl + '/files/list', {'dims':dimensions})
     return [ l.strip() for l in result.split('\n') if l ]
 
 def parseDims(dimensions):
     """ For debugging only """
-    result, _ = getURL(baseurl + '/files/list', {'dims':dimensions, "parse_only": "1"})
+    if len(dimensions) > 1024:
+        method = postURL
+    else:
+        method = getURL
+    result, _ = method(baseurl + '/files/list', {'dims':dimensions, "parse_only": "1"})
     return result.strip()
 
 def countFiles(dimensions=None, defname=None):
