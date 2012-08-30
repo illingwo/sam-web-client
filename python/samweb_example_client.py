@@ -6,17 +6,22 @@ from urllib2 import urlopen, URLError, HTTPError
 import time,os, socket, sys, optparse, user, pwd
 
 try:
+    experiment = os.environ['SAM_EXPERIMENT']
+except KeyError:
+    experiment = None
+
+try:
     baseurl = os.environ['SAM_WEB_BASE_URL']
 except KeyError:
-    baseurl = "http://samweb.fnal.gov:20004/sam/minerva/api"
+    baseurl = None
 try:
     default_group = os.environ['SAM_GROUP']
 except KeyError:
-    default_group = 'minerva'
+    default_group = None
 try:
     default_station = os.environ['SAM_STATION']
 except KeyError:
-    default_station = 'minerva'
+    default_station = None
 
 class Error(Exception):
   pass
@@ -459,10 +464,29 @@ def main():
     command = cmd()
     usage = "usage: %%prog %s [options] arg" % sys.argv[1]
     parser = optparse.OptionParser(usage)
+    parser.add_option('-e','--experiment',dest='experiment')
+    parser.add_option('-d','--devel', action="store_true", dest='devel', default=False)
+
     command.addOptions(parser)
 
     (options, args) = parser.parse_args(sys.argv[2:])
 
+    global experiment, baseurl, default_group, default_station
+    experiment = experiment or options.experiment
+    if experiment is not None:
+        if baseurl is None:
+            if options.devel:
+                baseurl = "http://samweb.fnal.gov:8480/sam/%s/dev/api" % experiment
+            else:
+                baseurl = "http://samweb.fnal.gov:8480/sam/%s/api" % experiment
+        if default_group is None:
+            default_group = experiment
+        if default_station is None:
+            default_station = experiment
+    elif not baseurl:
+        print>>sys.stderr, "Either the experiment must be specified in environment or command line, or the base url must be set"
+        parser.print_help()
+        return 2
     try:
         return command.run(options, args)
     except CmdError, ex:
