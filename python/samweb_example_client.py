@@ -7,6 +7,11 @@ from urllib2 import urlopen, URLError, HTTPError
 import time,os, socket, sys, optparse, user, pwd
 
 # handler to cope with client certificate auth
+# Note that this does not verify the server certificate
+# Since the main purpose is for the server to authenticate
+# the client. However, you should be cautious about sending
+# sensitive infomation (not that SAM deals with that)
+# as there's no protection against man-in-the-middle attacks
 class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def __init__(self, cert, key):
         urllib2.HTTPSHandler.__init__(self)
