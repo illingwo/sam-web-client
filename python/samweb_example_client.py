@@ -1,27 +1,31 @@
 #! /usr/bin/python
 
 from urllib import urlencode
+import urllib2,httplib
 from urllib2 import urlopen, URLError, HTTPError
 
 import time,os, socket, sys, optparse, user, pwd
 
-try:
-    experiment = os.environ['SAM_EXPERIMENT']
-except KeyError:
-    experiment = None
+# handler to cope with client certificate auth
+class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
+    def __init__(self, cert, key):
+        urllib2.HTTPSHandler.__init__(self)
+        self.cert = cert
+        self.key = key
 
-try:
-    baseurl = os.environ['SAM_WEB_BASE_URL']
-except KeyError:
-    baseurl = None
-try:
-    default_group = os.environ['SAM_GROUP']
-except KeyError:
-    default_group = None
-try:
-    default_station = os.environ['SAM_STATION']
-except KeyError:
-    default_station = None
+    def https_open(self, req):
+        # Rather than pass in a reference to a connection class, we pass in
+        # a reference to a function which, for all intents and purposes,
+        # will behave as a constructor
+        return self.do_open(self.getConnection, req)
+
+    def getConnection(self, host, timeout=300):
+        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+
+experiment = os.environ.get('SAM_EXPERIMENT')
+baseurl = os.environ.get('SAM_WEB_BASE_URL')
+default_group = os.environ.get('SAM_GROUP')
+default_station = os.environ.get('SAM_STATION')
 
 class Error(Exception):
   pass
@@ -70,6 +74,8 @@ def _doURL(url, action='GET', args=None):
                     msg = "GET of %s" % (url, )
                 raise Error("%s, failed with %s: %s" % (msg, str(x), errmsg))
         except URLError, x:
+            if isinstance(x.reason, socket.sslerror):
+                raise Error("SSL error: %s" % x.reason)
             print 'URL %s not responding' % url
         else:
             return (remote.read(), remote.code)
@@ -466,19 +472,46 @@ def main():
     parser = optparse.OptionParser(usage)
     parser.add_option('-e','--experiment',dest='experiment')
     parser.add_option('-d','--devel', action="store_true", dest='devel', default=False)
+    parser.add_option('-s','--secure', action="store_true", dest='secure', default=True)
+    parser.add_option('--cert', dest='cert')
+    parser.add_option('--key', dest='key')
 
     command.addOptions(parser)
 
     (options, args) = parser.parse_args(sys.argv[2:])
 
     global experiment, baseurl, default_group, default_station
+
+    # configure https settings
+    if options.secure or baseurl and baseurl.startswith('https'):
+        cert = options.cert
+        key = options.key or options.cert
+        if not cert:
+            cert = key = os.environ.get('X509_USER_PROXY')
+            if not cert:
+                # look in standard place for cert
+                proxypath = '/tmp/x509up_u%d' % os.getuid()
+                if os.path.exists(proxypath):
+                    cert = key = proxypath
+        if cert and key:
+            opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
+            urllib2.install_opener(opener)
+        else:
+            print>>sys.stderr, ("In secure mode certificate and key must be available, either from the --cert and --key\n"
+                "options, the X509_USER_PROXY envvar, or in /tmp/x509up_u%d" % os.getuid())
+
+    # configure the url
     experiment = experiment or options.experiment
     if experiment is not None:
         if baseurl is None:
             if options.devel:
-                baseurl = "http://samweb.fnal.gov:8480/sam/%s/dev/api" % experiment
+                path = "/sam/%s/dev/api" % experiment
             else:
-                baseurl = "http://samweb.fnal.gov:8480/sam/%s/api" % experiment
+                path = "/sam/%s/api" % experiment
+            if options.secure:
+                baseurl = "https://samweb.fnal.gov:8483%s" % path
+            else:
+                baseurl = "http://samweb.fnal.gov:8480%s" % path
         if default_group is None:
             default_group = experiment
         if default_station is None:
@@ -487,6 +520,7 @@ def main():
         print>>sys.stderr, "Either the experiment must be specified in environment or command line, or the base url must be set"
         parser.print_help()
         return 2
+
     try:
         return command.run(options, args)
     except CmdError, ex:
