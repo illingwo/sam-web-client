@@ -1,8 +1,8 @@
 #! /usr/bin/python
 
-from urllib import urlencode
+from urllib import urlencode, quote, quote_plus
 import urllib2,httplib
-from urllib2 import urlopen, URLError, HTTPError
+from urllib2 import urlopen, URLError, HTTPError, Request
 
 import time,os, socket, sys, optparse, user, pwd
 
@@ -44,10 +44,13 @@ maxretryinterval = 60
 def postURL(url, args):
     return _doURL(url, action='POST', args=args)
 
-def getURL(url, args=None):
-    return _doURL(url,action='GET',args=args)
+def getURL(url, args=None,format=None):
+    return _doURL(url,action='GET',args=args,format=format)
 
-def _doURL(url, action='GET', args=None):
+def _doURL(url, action='GET', args=None, format=None):
+    headers = {}
+    if format=='json':
+        headers['Accept'] = 'application/json'
     if action =='POST':
         if args is None: args = {}
         params = urlencode(args)
@@ -55,15 +58,15 @@ def _doURL(url, action='GET', args=None):
         params = None
         if args is not None:
             if '?' not in url: url += '?'
+            else: url += '&'
             url += urlencode(args)
     tmout = time.time() + maxtimeout
     retryinterval = 1
+
+    request = Request(url, data=params, headers=headers)
     while True:
         try:
-            if params is not None:
-                remote = urlopen(url, params)
-            else:
-                remote = urlopen(url)
+            remote = urlopen(request)
         except HTTPError, x:
             #python 2.4 treats 201 and up as errors instead of normal return codes
             if 201 <= x.code <= 299:
@@ -125,6 +128,19 @@ def countFiles(dimensions=None, defname=None):
     else:
         result, _ = getURL(baseurl + '/files/count', {'dims':dimensions})
     return long(result.strip())
+
+def _make_file_path(filenameorid):
+    try:
+        fileid = long(filenameorid)
+        path = '/files/id/%d' % fileid
+    except ValueError:
+        path = '/files/name/%s' % quote(filenameorid)
+    return path
+
+def getMetadata(filenameorid, format=None):
+    url = baseurl + _make_file_path(filenameorid) + '/metadata'
+    result, _ = getURL(url,format=format)
+    return result
 
 def listDefinitions(**queryCriteria):
     result, _ = getURL(baseurl + '/definitions/list', queryCriteria)
@@ -230,6 +246,7 @@ class CmdBase(object):
         pass
 
 class listFilesCmd(CmdBase):
+    name = "list-files"
 
     def addOptions(self, parser):
         parser.add_option("--parse-only", action="store_true", dest="parse_only", default=False)
@@ -245,13 +262,26 @@ class listFilesCmd(CmdBase):
                 print filename
 
 class countFilesCmd(CmdBase):
+    name = "count-files"
     def run(self, options, args):
         dims = (' '.join(args)).strip()
         if not dims:
             raise CmdError("No dimensions specified")
         print countFiles(dims)
 
+class getMetadataCmd(CmdBase):
+    name = 'get-metadata'
+
+    def addOptions(self, parser):
+        parser.add_option("--json", action="store_const", const="json", dest="format")
+
+    def run(self, options, args):
+        if len(args) != 1:
+            raise CmdError("Invalid or no argument specified")
+        print getMetadata(args[0],format=options.format)
+
 class listDefinitionsCmd(CmdBase):
+    name = "list-definitions"
     def addOptions(self, parser):
         parser.add_option("--defname", dest="defname")
         parser.add_option("--user", dest="user")
@@ -276,12 +306,14 @@ class listDefinitionsCmd(CmdBase):
 
 class descDefinitionCmd(CmdBase):
 
+    name = "describe-definition"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
         print descDefinition(args[0])
 
 class listDefinitionFilesCmd(CmdBase):
+    name = "list-definition-files"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -289,12 +321,14 @@ class listDefinitionFilesCmd(CmdBase):
             print filename
 
 class countDefinitionFilesCmd(CmdBase):
+    name = "count-definition-files"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
         print countFiles(defname=args[0])
 
 class createDefinitionCmd(CmdBase):
+    name = "create-definition"
     def addOptions(self, parser):
         parser.add_option("--defname", dest="defname")
         parser.add_option("--user", dest="user")
@@ -310,12 +344,14 @@ class createDefinitionCmd(CmdBase):
         return createDefinition(options.defname, dims, options.user, options.group, options.description)
 
 class deleteDefinitionCmd(CmdBase):
+    name = "delete-definition"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
         return deleteDefinition(args[0])
 
 class startProjectCmd(CmdBase):
+    name = "start-project"
     def addOptions(self, parser):
         parser.add_option("--project", dest="project")
         parser.add_option("--defname", dest="defname")
@@ -334,6 +370,7 @@ class startProjectCmd(CmdBase):
         print rval["projectURL"]
 
 class findProjectCmd(CmdBase):
+    name = "find-project"
     def addOptions(self, parser):
         parser.add_option("--project", dest="project")
 
@@ -345,6 +382,7 @@ class findProjectCmd(CmdBase):
         print rval
 
 class stopProjectCmd(CmdBase):
+    name = "stop-project"
     def addOptions(self, parser):
 
         parser.add_option("--project", dest="project")
@@ -363,6 +401,7 @@ class stopProjectCmd(CmdBase):
         stopProject(projecturl)
 
 class startProcessCmd(CmdBase):
+    name = "start-process"
     def addOptions(self, parser):
         parser.add_option("--project", dest="project")
         parser.add_option("--projecturl", dest="projecturl")
@@ -413,6 +452,7 @@ class ProcessCmd(CmdBase):
         return processurl
     
 class getNextFileCmd(ProcessCmd):
+    name = "get-next-file"
     
     def run(self, options, args):
         processurl = self.makeProcessUrl(options)
@@ -423,6 +463,7 @@ class getNextFileCmd(ProcessCmd):
             return 10
 
 class releaseFileCmd(ProcessCmd):
+    name = "release-file"
     def addOptions(self, parser):
         ProcessCmd.addOptions(self, parser)
         parser.add_option("--file", dest="filename")
@@ -437,21 +478,14 @@ class releaseFileCmd(ProcessCmd):
         releaseFile(processurl, options.filename)
 
 commands = {
-        "list-files": listFilesCmd,
-        "count-files": countFilesCmd,
-        "list-definitions": listDefinitionsCmd,
-        "describe-definition": descDefinitionCmd,
-        "list-definition-files": listDefinitionFilesCmd,
-        "count-definition-files": countDefinitionFilesCmd,
-        "create-definition": createDefinitionCmd,
-        "delete-definition": deleteDefinitionCmd,
-        "start-project": startProjectCmd,
-        "find-project": findProjectCmd,
-        "stop-project": stopProjectCmd,
-        "start-process": startProcessCmd,
-        "get-next-file": getNextFileCmd,
-        "release-file": releaseFileCmd,
        }
+
+# add all commands that define a name attribute to the list
+for o in locals().values():
+    try:
+        if issubclass(o, CmdBase) and hasattr(o, 'name') and o.name not in commands:
+            commands[o.name] = o
+    except TypeError: pass
 
 def coreusage():
     print "Available commands: "
