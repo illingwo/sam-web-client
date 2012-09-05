@@ -477,7 +477,7 @@ def main():
     parser = optparse.OptionParser(usage)
     parser.add_option('-e','--experiment',dest='experiment')
     parser.add_option('-d','--devel', action="store_true", dest='devel', default=False)
-    parser.add_option('-s','--secure', action="store_true", dest='secure', default=True)
+    parser.add_option('-s','--secure', action="store_true", dest='secure', default=False)
     parser.add_option('--cert', dest='cert')
     parser.add_option('--key', dest='key')
 
