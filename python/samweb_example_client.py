@@ -461,36 +461,44 @@ def coreusage():
 
 def main():
 
+    usage = "usage: %prog [base options] <command> [command options] ..."
+    parser = optparse.OptionParser(usage=usage)
+    parser.disable_interspersed_args()
+    base_options = optparse.OptionGroup(parser, "Base options")
+    base_options.add_option('-e','--experiment',dest='experiment')
+    base_options.add_option('-d','--devel', action="store_true", dest='devel', default=False)
+    base_options.add_option('-s','--secure', action="store_true", dest='secure', default=False)
+    base_options.add_option('--cert', dest='cert')
+    base_options.add_option('--key', dest='key')
+    parser.add_option_group(base_options)
 
-    if len(sys.argv) < 2:
+    (options, args) = parser.parse_args(sys.argv[1:])
+    if not args:
         print>>sys.stderr, "No command specified"
         return coreusage()
 
     try:
-        cmd = commands[sys.argv[1]]
+        cmd = commands[args[0]]
     except KeyError:
-        print>>sys.stderr, "Unknown command %s" % sys.argv[1]
+        print>>sys.stderr, "Unknown command %s" % args[0]
         return coreusage()
-
     command = cmd()
-    usage = "usage: %%prog %s [options] arg" % sys.argv[1]
-    parser = optparse.OptionParser(usage)
-    parser.add_option('-e','--experiment',dest='experiment')
-    parser.add_option('-d','--devel', action="store_true", dest='devel', default=False)
-    parser.add_option('-s','--secure', action="store_true", dest='secure', default=False)
-    parser.add_option('--cert', dest='cert')
-    parser.add_option('--key', dest='key')
+    usage = "usage: %%prog [base options] %s [command options] ..." % args[0]
+    parser.usage = usage
+    parser.enable_interspersed_args()
+    cmd_options = optparse.OptionGroup(parser, "%s options" % args[0])
 
-    command.addOptions(parser)
+    command.addOptions(cmd_options)
+    parser.add_option_group(cmd_options)
 
-    (options, args) = parser.parse_args(sys.argv[2:])
+    (cmdoptions, args) = parser.parse_args(args[1:])
 
     global experiment, baseurl, default_group, default_station
 
     # configure https settings
-    if options.secure or baseurl and baseurl.startswith('https'):
-        cert = options.cert
-        key = options.key or options.cert
+    if options.secure or cmdoptions.secure or baseurl and baseurl.startswith('https'):
+        cert = options.cert or cmdoptions.cert
+        key = options.key or cmdoptions.key or cert
         if not cert:
             cert = key = os.environ.get('X509_USER_PROXY')
             if not cert:
@@ -506,10 +514,10 @@ def main():
                 "options, the X509_USER_PROXY envvar, or in /tmp/x509up_u%d" % os.getuid())
 
     # configure the url
-    experiment = experiment or options.experiment
+    experiment = experiment or options.experiment or cmdoptions.experiment
     if experiment is not None:
         if baseurl is None:
-            if options.devel:
+            if options.devel or cmdoptions.devel:
                 path = "/sam/%s/dev/api" % experiment
             else:
                 path = "/sam/%s/api" % experiment
@@ -527,7 +535,7 @@ def main():
         return 2
 
     try:
-        return command.run(options, args)
+        return command.run(cmdoptions, args)
     except CmdError, ex:
         print>>sys.stderr, str(ex)
         parser.print_help()
