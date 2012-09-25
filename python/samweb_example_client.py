@@ -500,7 +500,7 @@ def main():
     parser.disable_interspersed_args()
     base_options = optparse.OptionGroup(parser, "Base options")
     base_options.add_option('-e','--experiment',dest='experiment')
-    base_options.add_option('-d','--devel', action="store_true", dest='devel', default=False)
+    base_options.add_option('--dev', action="store_true", dest='devel', default=False)
     base_options.add_option('-s','--secure', action="store_true", dest='secure', default=False)
     base_options.add_option('--cert', dest='cert')
     base_options.add_option('--key', dest='key')
@@ -551,7 +551,7 @@ def main():
     experiment = experiment or options.experiment or cmdoptions.experiment
     if experiment is not None:
         if baseurl is None:
-            if options.devel or cmdoptions.devel:
+            if options.devel or cmdoptions.devel and not experiment.endswith('/dev'):
                 path = "/sam/%s/dev/api" % experiment
             else:
                 path = "/sam/%s/api" % experiment
