@@ -70,7 +70,7 @@ def _doURL(url, action='GET', args=None, format=None):
         except HTTPError, x:
             #python 2.4 treats 201 and up as errors instead of normal return codes
             if 201 <= x.code <= 299:
-                return (x.read(), x.code)
+                return x
             errmsg = x.read().strip()
             # retry server errors (excluding internal errors)
             if x.code > 500 and time.time() < tmout:
@@ -86,7 +86,7 @@ def _doURL(url, action='GET', args=None, format=None):
                 raise Error("SSL error: %s" % x.reason)
             print 'URL %s not responding' % url
         else:
-            return (remote.read(), remote.code)
+            return remote
 
         time.sleep(retryinterval)
         retryinterval*=2
@@ -104,14 +104,14 @@ def getstation():
 
 def listFiles(dimensions=None, defname=None):
     if defname is not None:
-        result, _ = getURL(baseurl + '/definitions/name/%s/files/list' % defname)
+        result = getURL(baseurl + '/definitions/name/%s/files/list' % defname)
     else:
         if len(dimensions) > 1024:
             method = postURL
         else:
             method = getURL
-        result, _ = method(baseurl + '/files/list', {'dims':dimensions})
-    return [ l.strip() for l in result.split('\n') if l ]
+        result = method(baseurl + '/files/list', {'dims':dimensions})
+    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
 
 def parseDims(dimensions):
     """ For debugging only """
@@ -119,15 +119,15 @@ def parseDims(dimensions):
         method = postURL
     else:
         method = getURL
-    result, _ = method(baseurl + '/files/list', {'dims':dimensions, "parse_only": "1"})
-    return result.strip()
+    result = method(baseurl + '/files/list', {'dims':dimensions, "parse_only": "1"})
+    return result.read().strip()
 
 def countFiles(dimensions=None, defname=None):
     if defname is not None:
-        result, _ = getURL(baseurl + '/definitions/name/%s/files/count' % defname)
+        result = getURL(baseurl + '/definitions/name/%s/files/count' % defname)
     else:
-        result, _ = getURL(baseurl + '/files/count', {'dims':dimensions})
-    return long(result.strip())
+        result = getURL(baseurl + '/files/count', {'dims':dimensions})
+    return long(result.read().strip())
 
 def _make_file_path(filenameorid):
     try:
@@ -137,18 +137,23 @@ def _make_file_path(filenameorid):
         path = '/files/name/%s' % quote(filenameorid)
     return path
 
+def locateFile(filenameorid):
+    url = baseurl + _make_file_path(filenameorid) + '/locations'
+    result = getURL(url)
+    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
+
 def getMetadata(filenameorid, format=None):
     url = baseurl + _make_file_path(filenameorid) + '/metadata'
-    result, _ = getURL(url,format=format)
-    return result
+    result = getURL(url,format=format)
+    return result.read().strip()
 
 def listDefinitions(**queryCriteria):
-    result, _ = getURL(baseurl + '/definitions/list', queryCriteria)
-    return [ l.strip() for l in result.split('\n') if l ]
+    result = getURL(baseurl + '/definitions/list', queryCriteria)
+    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
 
 def descDefinition(defname):
-    result, _ = getURL(baseurl + '/definitions/name/' + defname + '/describe')
-    return result.strip()
+    result = getURL(baseurl + '/definitions/name/' + defname + '/describe')
+    return result.read().strip()
 
 def createDefinition(defname, dims, user=None, group=None, description=None):
 
@@ -160,26 +165,26 @@ def createDefinition(defname, dims, user=None, group=None, description=None):
     if description:
         params["description"] = description
 
-    result, _ = postURL(baseurl + '/definitions/create', params)
-    return result.strip()
+    result = postURL(baseurl + '/definitions/create', params)
+    return result.read().strip()
 
 def deleteDefinition(defname):
-    result, _ = postURL(baseurl + '/definitions/name/%s/delete' % defname, {})
-    return result.strip()
+    result = postURL(baseurl + '/definitions/name/%s/delete' % defname, {})
+    return result.read().strip()
 
 def makeProject(defname, project, station=None, user=None, group=None):
     if not station: station = getstation()
     if not user: user = getuser()
     if not group: group = getgroup()
     args = {'name':project,'station':station,"defname":defname,"username":user,"group":group}
-    result, _ = postURL(baseurl + '/startProject', args)
-    return {'project':project,'dataset':defname,'projectURL':result.strip()}
+    result = postURL(baseurl + '/startProject', args)
+    return {'project':project,'dataset':defname,'projectURL':result.read().strip()}
 
 def findProject(project, station=None):
     if not station: station = getstation()
     args = {'name':project,'station':station}
-    result, _ = getURL(baseurl + '/findProject', args)
-    return result.strip()
+    result = getURL(baseurl + '/findProject', args)
+    return result.read().strip()
 
 def makeProcess(projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
     if not deliveryLocation:
@@ -192,27 +197,34 @@ def makeProcess(projecturl, appfamily, appname, appversion, deliveryLocation=Non
         args["appfamily"] = appfamily
     if maxFiles:
         args["filelimit"] = maxFiles
-    cid, _ = postURL(projecturl + '/establishProcess', args)
-    return cid.strip()
+    result = postURL(projecturl + '/establishProcess', args)
+    return result.read().strip()
 
 def getNextFile(processurl):
-  url = processurl + '/getNextFile'
-  while True:
-      remote, code = postURL(url, {})
-      if code == 202:
-        time.sleep(10)
-      elif code == 204:
-        raise NoMoreFiles()
-      else:
-        return remote.strip()
+    url = processurl + '/getNextFile'
+    while True:
+        result= postURL(url, {})
+        code = result.code
+        if code == 202:
+            retry_interval = 10
+            retry_after = result.info().getheader('Retry-After')
+            if retry_after:
+                try:
+                    retry_interval = int(retry_after)
+                except ValueError: pass
+            time.sleep(retry_interval)
+        elif code == 204:
+            raise NoMoreFiles()
+        else:
+            return result.read().strip()
 
 def releaseFile(processurl, filename, status="ok"):
-  args = { 'filename' : filename, 'status':status }
-  postURL(processurl + '/releaseFile', args)
+    args = { 'filename' : filename, 'status':status }
+    postURL(processurl + '/releaseFile', args)
 
 def stopProject(projecturl):
-  args = { "force" : 1 }
-  postURL(projecturl + "/endProject", args)
+    args = { "force" : 1 }
+    postURL(projecturl + "/endProject", args)
 
 def runProject():
   projectinfo =  makeProject("test2056")
@@ -268,6 +280,14 @@ class countFilesCmd(CmdBase):
         if not dims:
             raise CmdError("No dimensions specified")
         print countFiles(dims)
+
+class locateFileCmd(CmdBase):
+    name = "locate-file"
+    def run(self, options, args):
+        if len(args) != 1:
+            raise CmdError("No filename specified")
+        filename = args[0]
+        print '\n'.join(locateFile(filename))
 
 class getMetadataCmd(CmdBase):
     name = 'get-metadata'
@@ -330,18 +350,19 @@ class countDefinitionFilesCmd(CmdBase):
 class createDefinitionCmd(CmdBase):
     name = "create-definition"
     def addOptions(self, parser):
-        parser.add_option("--defname", dest="defname")
         parser.add_option("--user", dest="user")
         parser.add_option("--group", dest="group")
         parser.add_option("--description", dest="description")
 
     def run(self, options, args):
-        dims = ' '.join(args)
+        try:
+            defname = args[0]
+        except IndexError:
+            raise CmdError("No definition name specified")
+        dims = ' '.join(args[1:])
         if not dims:
             raise CmdError("No dimensions specified")
-        if not options.defname:
-            raise CmdError("Must specify defname")
-        return createDefinition(options.defname, dims, options.user, options.group, options.description)
+        return createDefinition(defname, dims, options.user, options.group, options.description)
 
 class deleteDefinitionCmd(CmdBase):
     name = "delete-definition"
@@ -353,7 +374,6 @@ class deleteDefinitionCmd(CmdBase):
 class startProjectCmd(CmdBase):
     name = "start-project"
     def addOptions(self, parser):
-        parser.add_option("--project", dest="project")
         parser.add_option("--defname", dest="defname")
         parser.add_option("--group", dest="group")
         #parser.add_option("--url", action="store_true", dest="url")
@@ -362,8 +382,9 @@ class startProjectCmd(CmdBase):
         if not options.defname:
             raise CmdError("Definition name not specified")
         defname = options.defname
-        project = options.project
-        if not options.project:
+        try:
+            project = args[0]
+        except IndexError:
             now = time.strftime("%Y%m%d%H%M%S")
             project = "%s_%s_%s" % ( os.environ["USER"],defname, now)
         rval = makeProject(defname, project, group=options.group)
@@ -383,28 +404,22 @@ class findProjectCmd(CmdBase):
 
 class stopProjectCmd(CmdBase):
     name = "stop-project"
-    def addOptions(self, parser):
-
-        parser.add_option("--project", dest="project")
-        parser.add_option("--projecturl", dest="projecturl")
 
     def run(self, options, args):
         
-        projecturl = None
-        if options.projecturl:
-            projecturl = options.projecturl
-        elif options.project:
-            projecturl = findProject(options.project)
-        else:
+        try:
+            projecturl = args[0]
+        except IndexError:
             raise CmdError("Must specify project name or url")
+
+        if not '://' in projecturl:
+            projecturl = findProject(projecturl)
 
         stopProject(projecturl)
 
 class startProcessCmd(CmdBase):
     name = "start-process"
     def addOptions(self, parser):
-        parser.add_option("--project", dest="project")
-        parser.add_option("--projecturl", dest="projecturl")
         parser.add_option("--appfamily", dest="appfamily")
         parser.add_option("--appname", dest="appname")
         parser.add_option("--appversion", dest="appversion")
@@ -415,11 +430,12 @@ class startProcessCmd(CmdBase):
     def run(self, options, args):
         if not options.appname or not options.appversion:
             raise CmdError("Application name and version must be specified")
-        projecturl = None
-        if options.projecturl:
-            projecturl = options.projecturl
-        if not projecturl:
+        try:
+            projecturl = args[0]
+        except IndexError:
             raise CmdError("Must specify project url")
+        if not '://' in projecturl:
+            projecturl = findProject(projecturl)
 
         kwargs = { "deliveryLocation":options.deliverylocation }
         if options.maxfiles:
@@ -434,19 +450,15 @@ class startProcessCmd(CmdBase):
 
 class ProcessCmd(CmdBase):
 
-    def addOptions(self, parser):
-        parser.add_option("--project", dest="project")
-        parser.add_option("--projecturl", dest="projecturl")
-        parser.add_option("--processid", dest="processid")
-        parser.add_option("--processurl", dest="processurl")
-
-    def makeProcessUrl(self, options):
-
-        processurl = None
-        if options.processurl:
-            processurl = options.processurl
-        elif options.projecturl and options.processid:
-            processurl = options.projecturl + '/process/%s' % options.processid
+    def makeProcessUrl(self, args):
+        # note that this modifies args
+        if len(args) == 1:
+            processurl = args.pop(0)
+        elif len(args) >= 2:
+            projecturl = args.pop(0)
+            if not '://' in projecturl:
+                projecturl = findProject(projecturl)
+            processurl = projecturl + '/process/%s' % args.pop(0)
         if not processurl:
             raise CmdError("Must specify either process url or project url and process id")
         return processurl
@@ -455,27 +467,27 @@ class getNextFileCmd(ProcessCmd):
     name = "get-next-file"
     
     def run(self, options, args):
-        processurl = self.makeProcessUrl(options)
+        processurl = self.makeProcessUrl(args)
         try:
             rval = getNextFile(processurl)
             print rval
         except NoMoreFiles:
-            return 10
+            return 0
 
 class releaseFileCmd(ProcessCmd):
     name = "release-file"
     def addOptions(self, parser):
         ProcessCmd.addOptions(self, parser)
-        parser.add_option("--file", dest="filename")
         parser.add_option("--status", dest="status")
 
     def run(self, options, args):
-        processurl = self.makeProcessUrl(options)
-        if not options.filename:
+        processurl = self.makeProcessUrl(args)
+        if len(args) != 1:
             raise CmdError("Must specify filename")
+        filename = args[0]
         status = options.status
         if not status: status = 'ok'
-        releaseFile(processurl, options.filename)
+        releaseFile(processurl, filename)
 
 commands = {
        }
