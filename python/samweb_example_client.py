@@ -558,6 +558,9 @@ def main():
         else:
             print>>sys.stderr, ("In secure mode certificate and key must be available, either from the --cert and --key\n"
                 "options, the X509_USER_PROXY envvar, or in /tmp/x509up_u%d" % os.getuid())
+        secure = True
+    else:
+        secure = False
 
     # configure the url
     experiment = experiment or options.experiment or cmdoptions.experiment
@@ -567,7 +570,7 @@ def main():
                 path = "/sam/%s/dev/api" % experiment
             else:
                 path = "/sam/%s/api" % experiment
-            if options.secure:
+            if secure:
                 baseurl = "https://samweb.fnal.gov:8483%s" % path
             else:
                 baseurl = "http://samweb.fnal.gov:8480%s" % path
