@@ -226,6 +226,9 @@ def stopProject(projecturl):
     args = { "force" : 1 }
     postURL(projecturl + "/endProject", args)
 
+def projectSummary(projecturl):
+    return getURL(projecturl + "/summary").read().strip()
+
 def runProject():
   projectinfo =  makeProject("test2056")
   projecturl = projectinfo["projectURL"]
@@ -254,6 +257,7 @@ def runProject():
 class CmdError(Error): pass
 
 class CmdBase(object):
+    secure = False # mark commands that require authentication
     def addOptions(self, parser):
         pass
 
@@ -376,6 +380,7 @@ class startProjectCmd(CmdBase):
     def addOptions(self, parser):
         parser.add_option("--defname", dest="defname")
         parser.add_option("--group", dest="group")
+        parser.add_option("--station", dest="station")
         #parser.add_option("--url", action="store_true", dest="url")
 
     def run(self, options, args):
@@ -387,35 +392,45 @@ class startProjectCmd(CmdBase):
         except IndexError:
             now = time.strftime("%Y%m%d%H%M%S")
             project = "%s_%s_%s" % ( os.environ["USER"],defname, now)
-        rval = makeProject(defname, project, group=options.group)
+        rval = makeProject(defname, project, station=options.station, group=options.group)
         print rval["projectURL"]
 
-class findProjectCmd(CmdBase):
-    name = "find-project"
+class ProjectCmdBase(CmdBase):
+
     def addOptions(self, parser):
-        parser.add_option("--project", dest="project")
+        parser.add_option("--station", dest="station")
 
-    def run(self, options, args):
-        if not options.project:
-            raise CmdError("Project name must be specified")
-
-        rval = findProject(options.project)
-        print rval
-
-class stopProjectCmd(CmdBase):
-    name = "stop-project"
-
-    def run(self, options, args):
-        
+    def _getProjectUrl(self, options, args):
         try:
-            projecturl = args[0]
+            projecturl = args.pop(0)
         except IndexError:
             raise CmdError("Must specify project name or url")
 
         if not '://' in projecturl:
-            projecturl = findProject(projecturl)
+            projecturl = findProject(projecturl, options.station)
+        return projecturl
 
+class findProjectCmd(ProjectCmdBase):
+    name = "find-project"
+
+    def run(self, options, args):
+        rval = self._getProjectUrl(options, args)
+        print rval
+
+class stopProjectCmd(ProjectCmdBase):
+    name = "stop-project"
+
+    def run(self, options, args):
+        
+        projecturl = self._getProjectUrl(options, args)
         stopProject(projecturl)
+
+class projectSummaryCmd(ProjectCmdBase):
+    name = "project-summary"
+
+    def run(self, options, args):
+        projecturl = self._getProjectUrl(options, args)
+        print projectSummary(projecturl)
 
 class startProcessCmd(CmdBase):
     name = "start-process"
@@ -542,23 +557,25 @@ def main():
     global experiment, baseurl, default_group, default_station
 
     # configure https settings
-    if options.secure or cmdoptions.secure or baseurl and baseurl.startswith('https'):
-        cert = options.cert or cmdoptions.cert
-        key = options.key or cmdoptions.key or cert
+    cert = options.cert or cmdoptions.cert
+    key = options.key or cmdoptions.key or cert
+    if not cert:
+        cert = key = os.environ.get('X509_USER_PROXY')
         if not cert:
-            cert = key = os.environ.get('X509_USER_PROXY')
-            if not cert:
-                # look in standard place for cert
-                proxypath = '/tmp/x509up_u%d' % os.getuid()
-                if os.path.exists(proxypath):
-                    cert = key = proxypath
-        if cert and key:
-            opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
-            urllib2.install_opener(opener)
-        else:
+            # look in standard place for cert
+            proxypath = '/tmp/x509up_u%d' % os.getuid()
+            if os.path.exists(proxypath):
+                cert = key = proxypath
+    if cert and key:
+        opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
+        urllib2.install_opener(opener)
+
+    if command.secure or options.secure or cmdoptions.secure:
+        secure = True
+        if not (cert and key):
             print>>sys.stderr, ("In secure mode certificate and key must be available, either from the --cert and --key\n"
                 "options, the X509_USER_PROXY envvar, or in /tmp/x509up_u%d" % os.getuid())
-        secure = True
+
     else:
         secure = False
 
