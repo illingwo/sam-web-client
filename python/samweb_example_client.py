@@ -181,8 +181,8 @@ def makeProject(defname, project, station=None, user=None, group=None):
     return {'project':project,'dataset':defname,'projectURL':result.read().strip()}
 
 def findProject(project, station=None):
-    if not station: station = getstation()
-    args = {'name':project,'station':station}
+    args = {'name':project}
+    if station: args['station'] = station
     result = getURL(baseurl + '/findProject', args)
     return result.read().strip()
 
