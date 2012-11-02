@@ -6,253 +6,11 @@ from urllib2 import urlopen, URLError, HTTPError, Request
 
 import time,os, socket, sys, optparse, user, pwd
 
-# handler to cope with client certificate auth
-# Note that this does not verify the server certificate
-# Since the main purpose is for the server to authenticate
-# the client. However, you should be cautious about sending
-# sensitive infomation (not that SAM deals with that)
-# as there's no protection against man-in-the-middle attacks
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
-    def __init__(self, cert, key):
-        urllib2.HTTPSHandler.__init__(self)
-        self.cert = cert
-        self.key = key
+from samweb_client.http import *
+from samweb_client import *
 
-    def https_open(self, req):
-        # Rather than pass in a reference to a connection class, we pass in
-        # a reference to a function which, for all intents and purposes,
-        # will behave as a constructor
-        return self.do_open(self.getConnection, req)
-
-    def getConnection(self, host, timeout=300):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
-
-experiment = os.environ.get('SAM_EXPERIMENT')
-baseurl = os.environ.get('SAM_WEB_BASE_URL')
-default_group = os.environ.get('SAM_GROUP')
-default_station = os.environ.get('SAM_STATION')
-
-class Error(Exception):
-  pass
-
-class NoMoreFiles(Exception):
-  pass
-
-maxtimeout=60*30
-maxretryinterval = 60
-
-def postURL(url, args):
-    return _doURL(url, action='POST', args=args)
-
-def getURL(url, args=None,format=None):
-    return _doURL(url,action='GET',args=args,format=format)
-
-def _doURL(url, action='GET', args=None, format=None):
-    headers = {}
-    if format=='json':
-        headers['Accept'] = 'application/json'
-    if action =='POST':
-        if args is None: args = {}
-        params = urlencode(args)
-    else:
-        params = None
-        if args is not None:
-            if '?' not in url: url += '?'
-            else: url += '&'
-            url += urlencode(args)
-    tmout = time.time() + maxtimeout
-    retryinterval = 1
-
-    request = Request(url, data=params, headers=headers)
-    while True:
-        try:
-            remote = urlopen(request)
-        except HTTPError, x:
-            #python 2.4 treats 201 and up as errors instead of normal return codes
-            if 201 <= x.code <= 299:
-                return x
-            errmsg = x.read().strip()
-            # retry server errors (excluding internal errors)
-            if x.code > 500 and time.time() < tmout:
-                print "Error %s" % errmsg
-            else:
-                if action == 'POST':
-                    msg = "POST to %s, args = %s" % ( url, args)
-                else:
-                    msg = "GET of %s" % (url, )
-                raise Error("%s, failed with %s: %s" % (msg, str(x), errmsg))
-        except URLError, x:
-            if isinstance(x.reason, socket.sslerror):
-                raise Error("SSL error: %s" % x.reason)
-            print 'URL %s not responding' % url
-        else:
-            return remote
-
-        time.sleep(retryinterval)
-        retryinterval*=2
-        if retryinterval > maxretryinterval:
-            retryinterval = maxretryinterval
-
-def getuser():
-    return pwd.getpwuid(os.getuid()).pw_name
-
-def getgroup():
-    return default_group
-
-def getstation():
-    return default_station
-
-def listFiles(dimensions=None, defname=None):
-    if defname is not None:
-        result = getURL(baseurl + '/definitions/name/%s/files/list' % defname)
-    else:
-        if len(dimensions) > 1024:
-            method = postURL
-        else:
-            method = getURL
-        result = method(baseurl + '/files/list', {'dims':dimensions})
-    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
-
-def parseDims(dimensions):
-    """ For debugging only """
-    if len(dimensions) > 1024:
-        method = postURL
-    else:
-        method = getURL
-    result = method(baseurl + '/files/list', {'dims':dimensions, "parse_only": "1"})
-    return result.read().strip()
-
-def countFiles(dimensions=None, defname=None):
-    if defname is not None:
-        result = getURL(baseurl + '/definitions/name/%s/files/count' % defname)
-    else:
-        result = getURL(baseurl + '/files/count', {'dims':dimensions})
-    return long(result.read().strip())
-
-def _make_file_path(filenameorid):
-    try:
-        fileid = long(filenameorid)
-        path = '/files/id/%d' % fileid
-    except ValueError:
-        path = '/files/name/%s' % quote(filenameorid)
-    return path
-
-def locateFile(filenameorid):
-    url = baseurl + _make_file_path(filenameorid) + '/locations'
-    result = getURL(url)
-    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
-
-def getMetadata(filenameorid, format=None):
-    url = baseurl + _make_file_path(filenameorid) + '/metadata'
-    result = getURL(url,format=format)
-    return result.read().strip()
-
-def listDefinitions(**queryCriteria):
-    result = getURL(baseurl + '/definitions/list', queryCriteria)
-    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
-
-def descDefinition(defname):
-    result = getURL(baseurl + '/definitions/name/' + defname + '/describe')
-    return result.read().strip()
-
-def createDefinition(defname, dims, user=None, group=None, description=None):
-
-    params = { "defname": defname,
-             "dims": dims,
-             "user": user or getuser(),
-             "group": group or getgroup(),
-             }
-    if description:
-        params["description"] = description
-
-    result = postURL(baseurl + '/definitions/create', params)
-    return result.read().strip()
-
-def deleteDefinition(defname):
-    result = postURL(baseurl + '/definitions/name/%s/delete' % defname, {})
-    return result.read().strip()
-
-def makeProject(defname, project, station=None, user=None, group=None):
-    if not station: station = getstation()
-    if not user: user = getuser()
-    if not group: group = getgroup()
-    args = {'name':project,'station':station,"defname":defname,"username":user,"group":group}
-    result = postURL(baseurl + '/startProject', args)
-    return {'project':project,'dataset':defname,'projectURL':result.read().strip()}
-
-def findProject(project, station=None):
-    args = {'name':project}
-    if station: args['station'] = station
-    result = getURL(baseurl + '/findProject', args)
-    return result.read().strip()
-
-def makeProcess(projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
-    if not deliveryLocation:
-        deliveryLocation = socket.getfqdn()
-    if not user:
-        user = getuser()
-
-    args = { "appname":appname, "appversion":appversion, "deliverylocation" : deliveryLocation, "username":user }
-    if appfamily:
-        args["appfamily"] = appfamily
-    if maxFiles:
-        args["filelimit"] = maxFiles
-    result = postURL(projecturl + '/establishProcess', args)
-    return result.read().strip()
-
-def getNextFile(processurl):
-    url = processurl + '/getNextFile'
-    while True:
-        result= postURL(url, {})
-        code = result.code
-        if code == 202:
-            retry_interval = 10
-            retry_after = result.info().getheader('Retry-After')
-            if retry_after:
-                try:
-                    retry_interval = int(retry_after)
-                except ValueError: pass
-            time.sleep(retry_interval)
-        elif code == 204:
-            raise NoMoreFiles()
-        else:
-            return result.read().strip()
-
-def releaseFile(processurl, filename, status="ok"):
-    args = { 'filename' : filename, 'status':status }
-    postURL(processurl + '/releaseFile', args)
-
-def stopProject(projecturl):
-    args = { "force" : 1 }
-    postURL(projecturl + "/endProject", args)
-
-def projectSummary(projecturl):
-    return getURL(projecturl + "/summary").read().strip()
-
-def runProject():
-  projectinfo =  makeProject("test2056")
-  projecturl = projectinfo["projectURL"]
-  print "Project name is %s" % projectinfo["project"]
-  print "Project URL is %s" % projecturl
-
-  cpid = makeProcess(projecturl)
-  print "Consumer process id %s" %cpid
-  processurl = projecturl + '/process/%s' % cpid
-
-  while True:
-
-    try:
-      newfile = getNextFile(processurl)
-      print "Got file %s" % newfile
-    except NoMoreFiles:
-      print "No more files available"
-      break
-
-    releaseFile(processurl, newfile)
-    print "Released file %s" % newfile
-
-  stopProject(projecturl)
-  print "Project ended"
+from samweb_client.files import *
+from samweb_client.projects import *
 
 class CmdError(Error): pass
 
@@ -554,8 +312,6 @@ def main():
 
     (cmdoptions, args) = parser.parse_args(args[1:])
 
-    global experiment, baseurl, default_group, default_station
-
     # configure https settings
     cert = options.cert or cmdoptions.cert
     key = options.key or cmdoptions.key or cert
@@ -567,38 +323,24 @@ def main():
             if os.path.exists(proxypath):
                 cert = key = proxypath
     if cert and key:
-        opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
-        urllib2.install_opener(opener)
+        use_client_certificate(cert, key)
 
     if command.secure or options.secure or cmdoptions.secure:
-        secure = True
         if not (cert and key):
             print>>sys.stderr, ("In secure mode certificate and key must be available, either from the --cert and --key\n"
                 "options, the X509_USER_PROXY envvar, or in /tmp/x509up_u%d" % os.getuid())
+        samweb_connect.secure = True
 
     else:
-        secure = False
+        samweb_connect.secure = False
 
     # configure the url
-    experiment = experiment or options.experiment or cmdoptions.experiment
+    experiment = options.experiment or cmdoptions.experiment
     if experiment is not None:
-        if baseurl is None:
-            if options.devel or cmdoptions.devel and not experiment.endswith('/dev'):
-                path = "/sam/%s/dev/api" % experiment
-            else:
-                path = "/sam/%s/api" % experiment
-            if secure:
-                baseurl = "https://samweb.fnal.gov:8483%s" % path
-            else:
-                baseurl = "http://samweb.fnal.gov:8480%s" % path
-        if default_group is None:
-            default_group = experiment
-        if default_station is None:
-            default_station = experiment
-    elif not baseurl:
-        print>>sys.stderr, "Either the experiment must be specified in environment or command line, or the base url must be set"
-        parser.print_help()
-        return 2
+        samweb_connect.experiment = experiment
+
+    if options.devel or cmdoptions.devel:
+        samweb_connect.devel = True
 
     try:
         return command.run(cmdoptions, args)
