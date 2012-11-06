@@ -5,9 +5,9 @@ from urllib2 import urlopen, URLError, HTTPError, Request
 
 import time, socket
 
-import samweb_client
+from samweb_client import Error, samweb_connect
 
-class SAMWebHTTPError(samweb_client.Error):
+class SAMWebHTTPError(Error):
     pass
 
 maxtimeout=60*30
@@ -41,6 +41,9 @@ def getURL(url, args=None,format=None):
     return _doURL(url,action='GET',args=args,format=format)
 
 def _doURL(url, action='GET', args=None, format=None):
+    # if provided with a relative url, add the baseurl
+    if '://' not in url:
+        url = samweb_connect.baseurl + url
     headers = {}
     if format=='json':
         headers['Accept'] = 'application/json'

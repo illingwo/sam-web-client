@@ -10,14 +10,14 @@ def makeProject(defname, project, station=None, user=None, group=None):
     if not user: user = samweb_connect.user
     if not group: group = samweb_connect.group
     args = {'name':project,'station':station,"defname":defname,"username":user,"group":group}
-    result = postURL(samweb_connect.baseurl + '/startProject', args)
+    result = postURL('/startProject', args)
     return {'project':project,'dataset':defname,'projectURL':result.read().strip()}
 
 def findProject(project, station=None):
     args = {'name':project}
     if station: args['station'] = station
     else: args['station'] = samweb_connect.station
-    result = getURL(samweb_connect.baseurl + '/findProject', args)
+    result = getURL('/findProject', args)
     return result.read().strip()
 
 def makeProcess(projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
