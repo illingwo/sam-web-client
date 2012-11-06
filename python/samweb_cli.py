@@ -16,14 +16,17 @@ class CmdError(Error): pass
 
 class CmdBase(object):
     secure = False # mark commands that require authentication
+    description = None
+    args = None
+    options = ()
     def addOptions(self, parser):
         pass
 
 class listFilesCmd(CmdBase):
     name = "list-files"
-
-    def addOptions(self, parser):
-        parser.add_option("--parse-only", action="store_true", dest="parse_only", default=False)
+    options = [ "parse-only" ]
+    description = "List files by dimensions query"
+    args = "<dimensions query>"
 
     def run(self, options, args):
         dims = (' '.join(args)).strip()
@@ -37,6 +40,8 @@ class listFilesCmd(CmdBase):
 
 class countFilesCmd(CmdBase):
     name = "count-files"
+    description = "Count files by dimensions query"
+    args = "<dimensions query>"
     def run(self, options, args):
         dims = (' '.join(args)).strip()
         if not dims:
@@ -45,6 +50,8 @@ class countFilesCmd(CmdBase):
 
 class locateFileCmd(CmdBase):
     name = "locate-file"
+    description = "List file locations"
+    args = "<file name>"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("No filename specified")
@@ -53,6 +60,8 @@ class locateFileCmd(CmdBase):
 
 class getMetadataCmd(CmdBase):
     name = 'get-metadata'
+    description = "Get metadata for a file"
+    args = "<file name>"
 
     def addOptions(self, parser):
         parser.add_option("--json", action="store_const", const="json", dest="format")
@@ -64,12 +73,8 @@ class getMetadataCmd(CmdBase):
 
 class listDefinitionsCmd(CmdBase):
     name = "list-definitions"
-    def addOptions(self, parser):
-        parser.add_option("--defname", dest="defname")
-        parser.add_option("--user", dest="user")
-        parser.add_option("--group", dest="group")
-        parser.add_option("--after", dest="after")
-        parser.add_option("--before", dest="before")
+    options = [ "defname=", "user=", "group=", "after=", "before=" ]
+    description = "List existing dataset definitions"
 
     def run(self, options, args):
         args = {}
@@ -87,8 +92,9 @@ class listDefinitionsCmd(CmdBase):
             print l
 
 class descDefinitionCmd(CmdBase):
-
     name = "describe-definition"
+    description = "Describe an existing dataset definition"
+    args = "<dataset definition>"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -96,6 +102,8 @@ class descDefinitionCmd(CmdBase):
 
 class listDefinitionFilesCmd(CmdBase):
     name = "list-definition-files"
+    description = "List files in a dataset definition"
+    args = "<dataset definition>"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -104,6 +112,8 @@ class listDefinitionFilesCmd(CmdBase):
 
 class countDefinitionFilesCmd(CmdBase):
     name = "count-definition-files"
+    description = "Count number of files in a dataset definition"
+    args = "<dataset definition>"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -111,10 +121,9 @@ class countDefinitionFilesCmd(CmdBase):
 
 class createDefinitionCmd(CmdBase):
     name = "create-definition"
-    def addOptions(self, parser):
-        parser.add_option("--user", dest="user")
-        parser.add_option("--group", dest="group")
-        parser.add_option("--description", dest="description")
+    description = "Create a new dataset definition"
+    args = "<new definition name> <dimensions>"
+    options = [ "user=", "group=", "description=" ]
 
     def run(self, options, args):
         try:
@@ -128,6 +137,8 @@ class createDefinitionCmd(CmdBase):
 
 class deleteDefinitionCmd(CmdBase):
     name = "delete-definition"
+    description = "Delete an existing dataset definition"
+    args = "<dataset definition>"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -135,11 +146,9 @@ class deleteDefinitionCmd(CmdBase):
 
 class startProjectCmd(CmdBase):
     name = "start-project"
-    def addOptions(self, parser):
-        parser.add_option("--defname", dest="defname")
-        parser.add_option("--group", dest="group")
-        parser.add_option("--station", dest="station")
-        #parser.add_option("--url", action="store_true", dest="url")
+    description = "Start a new project"
+    options = [ "defname=", "group=", "station=" ]
+    args = "[project name]"
 
     def run(self, options, args):
         if not options.defname:
@@ -155,8 +164,7 @@ class startProjectCmd(CmdBase):
 
 class ProjectCmdBase(CmdBase):
 
-    def addOptions(self, parser):
-        parser.add_option("--station", dest="station")
+    options = [ "station=" ]
 
     def _getProjectUrl(self, options, args):
         try:
@@ -170,6 +178,8 @@ class ProjectCmdBase(CmdBase):
 
 class findProjectCmd(ProjectCmdBase):
     name = "find-project"
+    description = "Return the URL for a running project"
+    args = "<project name>"
 
     def run(self, options, args):
         rval = self._getProjectUrl(options, args)
@@ -177,6 +187,8 @@ class findProjectCmd(ProjectCmdBase):
 
 class stopProjectCmd(ProjectCmdBase):
     name = "stop-project"
+    description = "Stop a running project"
+    args = "<project name>"
 
     def run(self, options, args):
         
@@ -185,6 +197,8 @@ class stopProjectCmd(ProjectCmdBase):
 
 class projectSummaryCmd(ProjectCmdBase):
     name = "project-summary"
+    description = "Display the summary information for a project"
+    args = "<project name>"
 
     def run(self, options, args):
         projecturl = self._getProjectUrl(options, args)
@@ -192,13 +206,9 @@ class projectSummaryCmd(ProjectCmdBase):
 
 class startProcessCmd(CmdBase):
     name = "start-process"
-    def addOptions(self, parser):
-        parser.add_option("--appfamily", dest="appfamily")
-        parser.add_option("--appname", dest="appname")
-        parser.add_option("--appversion", dest="appversion")
-        parser.add_option("--delivery-location", dest="deliverylocation")
-        parser.add_option("--url", action="store_true", dest="url")
-        parser.add_option("--max-files", dest="maxfiles")
+    description = "Start a consumer process within a project"
+    options = [ "appfamily=", "appname=", "appversion=", "delivery-location=", "url", "max-files=" ]
+    args = "<project name or url>"
 
     def run(self, options, args):
         if not options.appname or not options.appversion:
@@ -210,9 +220,9 @@ class startProcessCmd(CmdBase):
         if not '://' in projecturl:
             projecturl = findProject(projecturl)
 
-        kwargs = { "deliveryLocation":options.deliverylocation }
+        kwargs = { "deliveryLocation":options.delivery_location }
         if options.maxfiles:
-            kwargs['maxFiles'] = options.maxfiles
+            kwargs['maxFiles'] = options.max_files
 
         rval = makeProcess(projecturl, options.appfamily, options.appname, 
                 options.appversion, **kwargs)
@@ -222,6 +232,7 @@ class startProcessCmd(CmdBase):
             print rval
 
 class ProcessCmd(CmdBase):
+    args = "(<process url> | <project url> <process id>)"
 
     def makeProcessUrl(self, args):
         # note that this modifies args
@@ -238,6 +249,7 @@ class ProcessCmd(CmdBase):
     
 class getNextFileCmd(ProcessCmd):
     name = "get-next-file"
+    description = "Get the next file from a process"
     
     def run(self, options, args):
         processurl = self.makeProcessUrl(args)
@@ -249,9 +261,8 @@ class getNextFileCmd(ProcessCmd):
 
 class releaseFileCmd(ProcessCmd):
     name = "release-file"
-    def addOptions(self, parser):
-        ProcessCmd.addOptions(self, parser)
-        parser.add_option("--status", dest="status")
+    description = "Release a file from a process"
+    options = [ "status=" ]
 
     def run(self, options, args):
         processurl = self.makeProcessUrl(args)
@@ -302,10 +313,24 @@ def main():
         print>>sys.stderr, "Unknown command %s" % args[0]
         return coreusage()
     command = cmd()
-    usage = "%%prog [base options] %s [command options] ..." % args[0]
+    usage = "%%prog [base options] %s [command options]" % (args[0])
+    if command.args: usage += ' ' + command.args
     parser.usage = usage
+    if command.description: parser.description = command.description
     parser.enable_interspersed_args()
     cmd_options = optparse.OptionGroup(parser, "%s options" % args[0])
+
+    for opt in command.options:
+        attribs = {}
+        if opt.endswith('='):
+            # value
+            opt = opt[:-1]
+        else:
+            # flag
+            attribs.update({"action":"store_true", "default":False})
+        attribs["dest"] = opt.replace('-','_')
+
+        cmd_options.add_option('--%s' % opt, **attribs)
 
     command.addOptions(cmd_options)
     parser.add_option_group(cmd_options)
