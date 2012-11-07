@@ -9,9 +9,6 @@ import time,os, socket, sys, optparse, user, pwd
 from samweb_client.http import *
 from samweb_client import *
 
-from samweb_client.files import *
-from samweb_client.projects import *
-
 class CmdError(Error): pass
 
 class CmdBase(object):
@@ -19,8 +16,13 @@ class CmdBase(object):
     description = None
     args = None
     options = ()
+
+    def __init__(self, samweb):
+        self.samweb = samweb
+
     def addOptions(self, parser):
         pass
+
 
 class listFilesCmd(CmdBase):
     name = "list-files"
@@ -33,9 +35,9 @@ class listFilesCmd(CmdBase):
         if not dims:
             raise CmdError("No dimensions specified")
         if options.parse_only:
-            print parseDims(dims)
+            print self.samweb.parseDims(dims)
         else:
-            for filename in listFiles(dims):
+            for filename in self.samweb.listFiles(dims):
                 print filename
 
 class countFilesCmd(CmdBase):
@@ -46,7 +48,7 @@ class countFilesCmd(CmdBase):
         dims = (' '.join(args)).strip()
         if not dims:
             raise CmdError("No dimensions specified")
-        print countFiles(dims)
+        print self.samweb.countFiles(dims)
 
 class locateFileCmd(CmdBase):
     name = "locate-file"
@@ -56,7 +58,7 @@ class locateFileCmd(CmdBase):
         if len(args) != 1:
             raise CmdError("No filename specified")
         filename = args[0]
-        print '\n'.join(locateFile(filename))
+        print '\n'.join(self.samweb.locateFile(filename))
 
 class getMetadataCmd(CmdBase):
     name = 'get-metadata'
@@ -69,7 +71,7 @@ class getMetadataCmd(CmdBase):
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Invalid or no argument specified")
-        print getMetadata(args[0],format=options.format)
+        print self.samweb.getMetadata(args[0],format=options.format)
 
 class declareFileCmd(CmdBase):
     name = 'declare-file'
@@ -86,7 +88,7 @@ class declareFileCmd(CmdBase):
                 f = open(name)
             except IOError, ex:
                 raise CmdError("Failed to open file: %s: " % (name, str(ex)))
-            declareFile(mdfile=f)
+            self.samweb.declareFile(mdfile=f)
 
 class listDefinitionsCmd(CmdBase):
     name = "list-definitions"
@@ -105,7 +107,7 @@ class listDefinitionsCmd(CmdBase):
             args['after'] = options.after
         if options.before:
             args['before'] = options.before
-        for l in listDefinitions(**args):
+        for l in self.samweb.listDefinitions(**args):
             print l
 
 class descDefinitionCmd(CmdBase):
@@ -115,7 +117,7 @@ class descDefinitionCmd(CmdBase):
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
-        print descDefinition(args[0])
+        print self.samweb.descDefinition(args[0])
 
 class listDefinitionFilesCmd(CmdBase):
     name = "list-definition-files"
@@ -124,7 +126,7 @@ class listDefinitionFilesCmd(CmdBase):
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
-        for filename in listFiles(defname=args[0]):
+        for filename in self.samweb.listFiles(defname=args[0]):
             print filename
 
 class countDefinitionFilesCmd(CmdBase):
@@ -134,7 +136,7 @@ class countDefinitionFilesCmd(CmdBase):
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
-        print countFiles(defname=args[0])
+        print self.samweb.countFiles(defname=args[0])
 
 class createDefinitionCmd(CmdBase):
     name = "create-definition"
@@ -150,7 +152,7 @@ class createDefinitionCmd(CmdBase):
         dims = ' '.join(args[1:])
         if not dims:
             raise CmdError("No dimensions specified")
-        return createDefinition(defname, dims, options.user, options.group, options.description)
+        return self.samweb.createDefinition(defname, dims, options.user, options.group, options.description)
 
 class deleteDefinitionCmd(CmdBase):
     name = "delete-definition"
@@ -159,7 +161,7 @@ class deleteDefinitionCmd(CmdBase):
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
-        return deleteDefinition(args[0])
+        return self.samweb.deleteDefinition(args[0])
 
 class startProjectCmd(CmdBase):
     name = "start-project"
@@ -176,7 +178,7 @@ class startProjectCmd(CmdBase):
         except IndexError:
             now = time.strftime("%Y%m%d%H%M%S")
             project = "%s_%s_%s" % ( os.environ["USER"],defname, now)
-        rval = makeProject(defname, project, station=options.station, group=options.group)
+        rval = self.samweb.makeProject(defname, project, station=options.station, group=options.group)
         print rval["projectURL"]
 
 class ProjectCmdBase(CmdBase):
@@ -190,7 +192,7 @@ class ProjectCmdBase(CmdBase):
             raise CmdError("Must specify project name or url")
 
         if not '://' in projecturl:
-            projecturl = findProject(projecturl, options.station)
+            projecturl = self.samweb.findProject(projecturl, options.station)
         return projecturl
 
 class findProjectCmd(ProjectCmdBase):
@@ -210,7 +212,7 @@ class stopProjectCmd(ProjectCmdBase):
     def run(self, options, args):
         
         projecturl = self._getProjectUrl(options, args)
-        stopProject(projecturl)
+        self.samweb.stopProject(projecturl)
 
 class projectSummaryCmd(ProjectCmdBase):
     name = "project-summary"
@@ -219,7 +221,7 @@ class projectSummaryCmd(ProjectCmdBase):
 
     def run(self, options, args):
         projecturl = self._getProjectUrl(options, args)
-        print projectSummary(projecturl)
+        print self.samweb.projectSummary(projecturl)
 
 class startProcessCmd(CmdBase):
     name = "start-process"
@@ -235,13 +237,13 @@ class startProcessCmd(CmdBase):
         except IndexError:
             raise CmdError("Must specify project url")
         if not '://' in projecturl:
-            projecturl = findProject(projecturl)
+            projecturl = self.samweb.findProject(projecturl)
 
         kwargs = { "deliveryLocation":options.delivery_location }
         if options.maxfiles:
             kwargs['maxFiles'] = options.max_files
 
-        rval = makeProcess(projecturl, options.appfamily, options.appname, 
+        rval = self.samweb.makeProcess(projecturl, options.appfamily, options.appname, 
                 options.appversion, **kwargs)
         if options.url:
             print '%s/process/%s' % (projecturl, rval)
@@ -258,7 +260,7 @@ class ProcessCmd(CmdBase):
         elif len(args) >= 2:
             projecturl = args.pop(0)
             if not '://' in projecturl:
-                projecturl = findProject(projecturl)
+                projecturl = self.samweb.findProject(projecturl)
             processurl = projecturl + '/process/%s' % args.pop(0)
         if not processurl:
             raise CmdError("Must specify either process url or project url and process id")
@@ -271,7 +273,7 @@ class getNextFileCmd(ProcessCmd):
     def run(self, options, args):
         processurl = self.makeProcessUrl(args)
         try:
-            rval = getNextFile(processurl)
+            rval = self.samweb.getNextFile(processurl)
             print rval
         except NoMoreFiles:
             return 0
@@ -288,7 +290,7 @@ class releaseFileCmd(ProcessCmd):
         filename = args[0]
         status = options.status
         if not status: status = 'ok'
-        releaseFile(processurl, filename)
+        self.samweb.releaseFile(processurl, filename)
 
 commands = {
        }
@@ -329,7 +331,11 @@ def main():
     except KeyError:
         print>>sys.stderr, "Unknown command %s" % args[0]
         return coreusage()
-    command = cmd()
+
+    # set up client
+    samweb = SAMWebClient()
+    command = cmd(samweb)
+
     usage = "%%prog [base options] %s [command options]" % (args[0])
     if command.args: usage += ' ' + command.args
     parser.usage = usage
@@ -354,6 +360,7 @@ def main():
 
     (cmdoptions, args) = parser.parse_args(args[1:])
 
+
     # configure https settings
     cert = options.cert or cmdoptions.cert
     key = options.key or cmdoptions.key or cert
@@ -371,18 +378,18 @@ def main():
         if not (cert and key):
             print>>sys.stderr, ("In secure mode certificate and key must be available, either from the --cert and --key\n"
                 "options, the X509_USER_PROXY envvar, or in /tmp/x509up_u%d" % os.getuid())
-        samweb_connect.secure = True
+        samweb.secure = True
 
     else:
-        samweb_connect.secure = False
+        samweb.secure = False
 
     # configure the url
     experiment = options.experiment or cmdoptions.experiment
     if experiment is not None:
-        samweb_connect.experiment = experiment
+        samweb.experiment = experiment
 
     if options.devel or cmdoptions.devel:
-        samweb_connect.devel = True
+        samweb.devel = True
 
     try:
         return command.run(cmdoptions, args)

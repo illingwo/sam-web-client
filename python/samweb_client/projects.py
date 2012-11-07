@@ -1,26 +1,30 @@
 
-from samweb_client import *
-from samweb_client.http import *
+from samweb_client import json
+from samweb_client.client import samweb_method
+from samweb_client.http import quote
 
 class NoMoreFiles(Exception):
   pass
 
-def makeProject(defname, project, station=None, user=None, group=None):
+@samweb_method
+def makeProject(samweb, defname, project, station=None, user=None, group=None):
     if not station: station = getstation()
     if not user: user = samweb_connect.user
     if not group: group = samweb_connect.group
     args = {'name':project,'station':station,"defname":defname,"username":user,"group":group}
-    result = postURL('/startProject', args)
+    result = samweb.postURL('/startProject', args)
     return {'project':project,'dataset':defname,'projectURL':result.read().strip()}
 
-def findProject(project, station=None):
+@samweb_method
+def findProject(samweb, project, station=None):
     args = {'name':project}
     if station: args['station'] = station
     else: args['station'] = samweb_connect.station
-    result = getURL('/findProject', args)
+    result = samweb.getURL('/findProject', args)
     return result.read().strip()
 
-def makeProcess(projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
+@samweb_method
+def makeProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
     if not deliveryLocation:
         deliveryLocation = socket.getfqdn()
     if not user:
@@ -31,13 +35,14 @@ def makeProcess(projecturl, appfamily, appname, appversion, deliveryLocation=Non
         args["appfamily"] = appfamily
     if maxFiles:
         args["filelimit"] = maxFiles
-    result = postURL(projecturl + '/establishProcess', args)
+    result = samweb.postURL(projecturl + '/establishProcess', args)
     return result.read().strip()
 
-def getNextFile(processurl):
+@samweb_method
+def getNextFile(samweb, processurl):
     url = processurl + '/getNextFile'
     while True:
-        result= postURL(url, {})
+        result= samweb.postURL(url, {})
         code = result.code
         if code == 202:
             retry_interval = 10
@@ -52,16 +57,19 @@ def getNextFile(processurl):
         else:
             return result.read().strip()
 
-def releaseFile(processurl, filename, status="ok"):
+@samweb_method
+def releaseFile(samweb, processurl, filename, status="ok"):
     args = { 'filename' : filename, 'status':status }
-    postURL(processurl + '/releaseFile', args)
+    samweb.postURL(processurl + '/releaseFile', args)
 
-def stopProject(projecturl):
+@samweb_method
+def stopProject(samweb, projecturl):
     args = { "force" : 1 }
-    postURL(projecturl + "/endProject", args)
+    samweb.postURL(projecturl + "/endProject", args)
 
-def projectSummary(projecturl):
-    return getURL(projecturl + "/summary").read().strip()
+@samweb_method
+def projectSummary(samweb, projecturl):
+    return samweb.getURL(projecturl + "/summary").read().strip()
 
 """
 

@@ -1,32 +1,36 @@
 
-from samweb_client import *
-from samweb_client.http import *
+from samweb_client import json
+from samweb_client.client import samweb_method
+from samweb_client.http import quote
 
-def listFiles(dimensions=None, defname=None):
+@samweb_method
+def listFiles(samweb, dimensions=None, defname=None):
     if defname is not None:
-        result = getURL('/definitions/name/%s/files/list' % defname)
+        result = samweb.getURL('/definitions/name/%s/files/list' % defname)
     else:
         if len(dimensions) > 1024:
-            method = postURL
+            method = samweb.postURL
         else:
-            method = getURL
+            method = samweb.getURL
         result = method('/files/list', {'dims':dimensions})
     return filter( lambda l: l, (l.strip() for l in result.readlines()) )
 
-def parseDims(dimensions):
+@samweb_method
+def parseDims(samweb, dimensions):
     """ For debugging only """
     if len(dimensions) > 1024:
-        method = postURL
+        method = samweb.postURL
     else:
-        method = getURL
+        method = samweb.getURL
     result = method('/files/list', {'dims':dimensions, "parse_only": "1"})
     return result.read().strip()
 
-def countFiles(dimensions=None, defname=None):
+@samweb_method
+def countFiles(samweb, dimensions=None, defname=None):
     if defname is not None:
-        result = getURL('/definitions/name/%s/files/count' % defname)
+        result = samweb.getURL('/definitions/name/%s/files/count' % defname)
     else:
-        result = getURL('/files/count', {'dims':dimensions})
+        result = samweb.getURL('/files/count', {'dims':dimensions})
     return long(result.read().strip())
 
 def _make_file_path(filenameorid):
@@ -37,42 +41,50 @@ def _make_file_path(filenameorid):
         path = '/files/name/%s' % quote(filenameorid)
     return path
 
-def locateFile(filenameorid):
+@samweb_method
+def locateFile(samweb, filenameorid):
     url = _make_file_path(filenameorid) + '/locations'
-    result = getURL(url)
+    result = samweb.getURL(url)
     return filter( lambda l: l, (l.strip() for l in result.readlines()) )
 
-def _getMetadata(filenameorid, format=None):
+@samweb_method
+def _getMetadata(samweb, filenameorid, format=None):
     url = _make_file_path(filenameorid) + '/metadata'
-    return getURL(url,format=format)
+    return samweb.getURL(url,format=format)
 
-def getMetadataDict(filenameorid):
+@samweb_method
+def getMetadataDict(samweb, filenameorid):
     """ Return metadata as a dictionary """
-    response = _getMetadata(filenameorid, format='json')
+    response = samweb._getMetadata(filenameorid, format='json')
     return json.load()
 
-def getMetadata(filenameorid, format=None):
+@samweb_method
+def getMetadata(samweb, filenameorid, format=None):
     """ Return metadata as a string"""
-    result = _getMetadata(filenameorid, format=format)
+    result = samweb._getMetadata(filenameorid, format=format)
     return result.read().strip()
 
-def declareFile(md=None, mdfile=None):
+@samweb_method
+def declareFile(samweb, md=None, mdfile=None):
     """ Declare a new file """
     if md:
         body = json.dumps(md)
     else:
         body = mdfile.read()
-    postURL('/files', body=body, content_type='application/json')
+    samweb.postURL('/files', body=body, content_type='application/json')
 
-def listDefinitions(**queryCriteria):
-    result = getURL('/definitions/list', queryCriteria)
+@samweb_method
+def listDefinitions(samweb, **queryCriteria):
+    result = samweb.getURL('/definitions/list', queryCriteria)
     return filter( lambda l: l, (l.strip() for l in result.readlines()) )
 
-def descDefinition(defname):
-    result = getURL('/definitions/name/' + defname + '/describe')
+@samweb_method
+def descDefinition(samweb, defname):
+    result = samweb.getURL('/definitions/name/' + defname + '/describe')
     return result.read().strip()
 
-def createDefinition(defname, dims, user=None, group=None, description=None):
+@samweb_method
+def createDefinition(samweb, defname, dims, user=None, group=None, description=None):
 
     params = { "defname": defname,
              "dims": dims,
@@ -82,10 +94,11 @@ def createDefinition(defname, dims, user=None, group=None, description=None):
     if description:
         params["description"] = description
 
-    result = postURL('/definitions/create', params)
+    result = samweb.postURL('/definitions/create', params)
     return result.read().strip()
 
-def deleteDefinition(defname):
-    result = postURL('/definitions/name/%s/delete' % defname, {})
+@samweb_method
+def deleteDefinition(samweb, defname):
+    result = samweb.postURL('/definitions/name/%s/delete' % defname, {})
     return result.read().strip()
 

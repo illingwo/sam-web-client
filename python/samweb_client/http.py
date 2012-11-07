@@ -5,7 +5,7 @@ from urllib2 import urlopen, URLError, HTTPError, Request
 
 import time, socket
 
-from samweb_client import Error, samweb_connect
+from samweb_client import Error
 
 class SAMWebHTTPError(Error):
     def __init__(self, method, url, args, code, msg):
@@ -52,9 +52,6 @@ def getURL(url, args=None,format=None):
     return _doURL(url,action='GET',args=args,format=format)
 
 def _doURL(url, action='GET', args=None, format=None, body=None, content_type=None):
-    # if provided with a relative url, add the baseurl
-    if '://' not in url:
-        url = samweb_connect.baseurl + url
     headers = {}
     if format=='json':
         headers['Accept'] = 'application/json'
