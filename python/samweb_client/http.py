@@ -8,7 +8,18 @@ import time, socket
 from samweb_client import Error, samweb_connect
 
 class SAMWebHTTPError(Error):
-    pass
+    def __init__(self, method, url, args, code, msg):
+        self.method = method
+        self.url = url
+        self.args = args
+        self.code = code
+        self.msg = msg
+
+    def __str__(self):
+        if 400 <= self.code < 500:
+            return self.msg
+        else:
+            return "HTTP error: %(code)d %(msg)s\nURL: %(url)s" % self.__dict__
 
 maxtimeout=60*30
 maxretryinterval = 60
@@ -34,24 +45,26 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
-def postURL(url, args):
-    return _doURL(url, action='POST', args=args)
+def postURL(url, args=None, body=None, content_type=None):
+    return _doURL(url, action='POST', args=args, body=body, content_type=content_type)
 
 def getURL(url, args=None,format=None):
     return _doURL(url,action='GET',args=args,format=format)
 
-def _doURL(url, action='GET', args=None, format=None):
+def _doURL(url, action='GET', args=None, format=None, body=None, content_type=None):
     # if provided with a relative url, add the baseurl
     if '://' not in url:
         url = samweb_connect.baseurl + url
     headers = {}
     if format=='json':
         headers['Accept'] = 'application/json'
+
+    params=None
     if action =='POST':
-        if args is None: args = {}
-        params = urlencode(args)
+        if body is None:
+            if args is None: args = {}
+            params = urlencode(args)
     else:
-        params = None
         if args is not None:
             if '?' not in url: url += '?'
             else: url += '&'
@@ -60,6 +73,10 @@ def _doURL(url, action='GET', args=None, format=None):
     retryinterval = 1
 
     request = Request(url, data=params, headers=headers)
+    if body:
+        request.add_data(body)
+    if content_type:
+        request.add_header('Content-Type', content_type)
     while True:
         try:
             remote = urlopen(request)
@@ -76,10 +93,10 @@ def _doURL(url, action='GET', args=None, format=None):
                     msg = "POST to %s, args = %s" % ( url, args)
                 else:
                     msg = "GET of %s" % (url, )
-                raise SAMWebHTTPError("%s, failed with %s: %s" % (msg, str(x), errmsg))
+                raise SAMWebHTTPError(action, url, args, x.code, errmsg)
         except URLError, x:
             if isinstance(x.reason, socket.sslerror):
-                raise SAMWebHTTPError("SSL error: %s" % x.reason)
+                raise Error("SSL error: %s" % x.reason)
             print 'URL %s not responding' % url
         else:
             return remote
@@ -94,4 +111,4 @@ def use_client_certificate(cert, key):
     opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
     urllib2.install_opener(opener)
 
-__all__ = ['postURL', 'getURL', 'use_client_certificate']
+__all__ = ['postURL', 'getURL', 'use_client_certificate', 'quote', 'quote_plus']

@@ -71,6 +71,23 @@ class getMetadataCmd(CmdBase):
             raise CmdError("Invalid or no argument specified")
         print getMetadata(args[0],format=options.format)
 
+class declareFileCmd(CmdBase):
+    name = 'declare-file'
+    description = "Declare a new file into the database"
+    args = "<name of metadata file>"
+
+    secure = True
+
+    def run(self, options, args):
+        if not args:
+            raise CmdError("No metadata files provided")
+        for name in args:
+            try:
+                f = open(name)
+            except IOError, ex:
+                raise CmdError("Failed to open file: %s: " % (name, str(ex)))
+            declareFile(mdfile=f)
+
 class listDefinitionsCmd(CmdBase):
     name = "list-definitions"
     options = [ "defname=", "user=", "group=", "after=", "before=" ]

@@ -42,10 +42,27 @@ def locateFile(filenameorid):
     result = getURL(url)
     return filter( lambda l: l, (l.strip() for l in result.readlines()) )
 
-def getMetadata(filenameorid, format=None):
+def _getMetadata(filenameorid, format=None):
     url = _make_file_path(filenameorid) + '/metadata'
-    result = getURL(url,format=format)
+    return getURL(url,format=format)
+
+def getMetadataDict(filenameorid):
+    """ Return metadata as a dictionary """
+    response = _getMetadata(filenameorid, format='json')
+    return json.load()
+
+def getMetadata(filenameorid, format=None):
+    """ Return metadata as a string"""
+    result = _getMetadata(filenameorid, format=format)
     return result.read().strip()
+
+def declareFile(md=None, mdfile=None):
+    """ Declare a new file """
+    if md:
+        body = json.dumps(md)
+    else:
+        body = mdfile.read()
+    postURL('/files', body=body, content_type='application/json')
 
 def listDefinitions(**queryCriteria):
     result = getURL('/definitions/list', queryCriteria)
