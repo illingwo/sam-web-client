@@ -1,7 +1,8 @@
 
 import samweb_client
+import http
 
-import os, http
+import os, pwd
 
 class SAMWebClient(object):
     _experiment = os.environ.get('SAM_EXPERIMENT')
@@ -80,13 +81,13 @@ class SAMWebClient(object):
             url = self.get_baseurl(secure) + url
         return url
 
-    def getURL(self, url, secure=None, *args, **kwargs):
+    def getURL(self, url, args=None, secure=None, *cmdargs, **kwargs):
         url = self._prepareURL(url, secure)
-        return http.getURL(url, *args, **kwargs)
+        return http.getURL(url, args, *cmdargs, **kwargs)
 
-    def postURL(self, url, secure=None, *args, **kwargs):
+    def postURL(self, url, args, secure=None, *cmdargs, **kwargs):
         url = self._prepareURL(url, secure)
-        return http.postURL(url, *args, **kwargs)
+        return http.postURL(url, args, *cmdargs, **kwargs)
 
 def samweb_method(m):
     """ Attach this function as a method of the SAMWebClient class """
