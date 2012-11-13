@@ -12,7 +12,6 @@ from samweb_client import *
 class CmdError(Error): pass
 
 class CmdBase(object):
-    secure = False # mark commands that require authentication
     description = None
     args = None
     options = ()
@@ -77,8 +76,6 @@ class declareFileCmd(CmdBase):
     name = 'declare-file'
     description = "Declare a new file into the database"
     args = "<name of metadata file>"
-
-    secure = True
 
     def run(self, options, args):
         if not args:
@@ -364,24 +361,10 @@ def main():
     # configure https settings
     cert = options.cert or cmdoptions.cert
     key = options.key or cmdoptions.key or cert
-    if not cert:
-        cert = key = os.environ.get('X509_USER_PROXY')
-        if not cert:
-            # look in standard place for cert
-            proxypath = '/tmp/x509up_u%d' % os.getuid()
-            if os.path.exists(proxypath):
-                cert = key = proxypath
-    if cert and key:
-        use_client_certificate(cert, key)
+    if cert: samweb.set_certificate(cert, key)
 
-    if command.secure or options.secure or cmdoptions.secure:
-        if not (cert and key):
-            print>>sys.stderr, ("In secure mode certificate and key must be available, either from the --cert and --key\n"
-                "options, the X509_USER_PROXY envvar, or in /tmp/x509up_u%d" % os.getuid())
+    if options.secure or cmdoptions.secure:
         samweb.secure = True
-
-    else:
-        samweb.secure = False
 
     # configure the url
     experiment = options.experiment or cmdoptions.experiment

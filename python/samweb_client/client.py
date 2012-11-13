@@ -10,9 +10,11 @@ class SAMWebClient(object):
     _group = os.environ.get('SAM_GROUP')
     _station = os.environ.get('SAM_STATION')
 
-    def __init__(self):
-        self.secure = False
-        self.devel = False
+    def __init__(self, experiment=None, secure=False, cert=None, key=None, devel=False):
+        if experiment is not None: self.experiment = experiment
+        self.secure = secure
+        self.devel = devel
+        self.set_client_certificate(cert, key)
 
     def get_experiment(self):
         if self._experiment is None:
@@ -27,21 +29,29 @@ class SAMWebClient(object):
 
     experiment = property(get_experiment, set_experiment)
 
-    @property
-    def baseurl(self):
-        if not self.secure and self._baseurl is not None:
+    def set_client_certificate(self, cert, key=None):
+        http.use_client_certificate(cert, key)
+
+    def get_baseurl(self, secure=None):
+        secure = secure or self.secure 
+        if not secure and self._baseurl is not None:
             return self._baseurl
-        if self.secure and self._basesslurl is not None:
+        if secure and self._basesslurl is not None:
             return self._basesslurl
 
         if self.devel:
             path = "/sam/%s/dev/api" % self.experiment
         else:
             path = "/sam/%s/api" % self.experiment
-        if self.secure:
+        if secure:
+            if self._baseurl:
+                import sys
+                sys.stderr.write('Warning: BASEURL is set, but using default SSL URL')
             return "https://samweb.fnal.gov:8483%s" % path
         else:
             return "http://samweb.fnal.gov:8480%s" % path
+
+    baseurl = property(get_baseurl)
 
     def get_group(self):
         return self._group or self.get_experiment()
@@ -64,16 +74,18 @@ class SAMWebClient(object):
 
     user = property(get_user)
 
-    def getURL(self, url, *args, **kwargs):
+    def _prepareURL(self, url, secure=None):
         # if provided with a relative url, add the baseurl
         if '://' not in url:
-            url = self.baseurl + url
+            url = self.get_baseurl(secure) + url
+        return url
+
+    def getURL(self, url, secure=None, *args, **kwargs):
+        url = self._prepareURL(url, secure)
         return http.getURL(url, *args, **kwargs)
 
-    def postURL(self, url, *args, **kwargs):
-        # if provided with a relative url, add the baseurl
-        if '://' not in url:
-            url = self.baseurl + url
+    def postURL(self, url, secure=None, *args, **kwargs):
+        url = self._prepareURL(url, secure)
         return http.postURL(url, *args, **kwargs)
 
 def samweb_method(m):

@@ -3,7 +3,7 @@ from urllib import urlencode, quote, quote_plus
 import urllib2,httplib
 from urllib2 import urlopen, URLError, HTTPError, Request
 
-import time, socket
+import time, socket, os
 
 from samweb_client import Error
 
@@ -93,7 +93,14 @@ def _doURL(url, action='GET', args=None, format=None, body=None, content_type=No
                 raise SAMWebHTTPError(action, url, args, x.code, errmsg)
         except URLError, x:
             if isinstance(x.reason, socket.sslerror):
-                raise Error("SSL error: %s" % x.reason)
+                msg = str(x.reason)
+                if 'error:14094410' in msg:
+                    if client_cert:
+                        raise Error("SSL error: %s: is client certificate valid?" % msg)
+                    else:
+                        raise Error("SSL error: %s: no client certificate has been installed" % msg)
+                else:
+                    raise Error("SSL error: %s" % x.reason)
             print 'URL %s not responding' % url
         else:
             return remote
@@ -103,9 +110,20 @@ def _doURL(url, action='GET', args=None, format=None, body=None, content_type=No
         if retryinterval > maxretryinterval:
             retryinterval = maxretryinterval
 
-def use_client_certificate(cert, key):
+client_cert = None
+def use_client_certificate(cert=None, key=None):
     """ Use the given certificate and key for client ssl authentication """
-    opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
-    urllib2.install_opener(opener)
+    if not cert:
+        cert = key = os.environ.get('X509_USER_PROXY')
+        if not cert:
+            # look in standard place for cert
+            proxypath = '/tmp/x509up_u%d' % os.getuid()
+            if os.path.exists(proxypath):
+                cert = key = proxypath
+    if cert:
+        opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
+        urllib2.install_opener(opener)
+        global client_cert
+        client_cert = cert
 
 __all__ = ['postURL', 'getURL', 'use_client_certificate', 'quote', 'quote_plus']

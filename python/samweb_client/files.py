@@ -71,7 +71,7 @@ def declareFile(samweb, md=None, mdfile=None):
         body = json.dumps(md)
     else:
         body = mdfile.read()
-    samweb.postURL('/files', body=body, content_type='application/json')
+    samweb.postURL('/files', body=body, content_type='application/json', secure=True)
 
 @samweb_method
 def listDefinitions(samweb, **queryCriteria):
