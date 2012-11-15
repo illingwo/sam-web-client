@@ -12,6 +12,7 @@ from samweb_client import *
 class CmdError(Error): pass
 
 class CmdBase(object):
+    cmdgroup = None
     description = None
     args = None
     options = ()
@@ -25,8 +26,9 @@ class CmdBase(object):
 
 class listFilesCmd(CmdBase):
     name = "list-files"
-    options = [ "parse-only" ]
+    options = [ ("parse-only", "Return parser output for these dimensions instead of evaluating them") ]
     description = "List files by dimensions query"
+    cmdgroup = 'datafiles'
     args = "<dimensions query>"
 
     def run(self, options, args):
@@ -43,6 +45,7 @@ class countFilesCmd(CmdBase):
     name = "count-files"
     description = "Count files by dimensions query"
     args = "<dimensions query>"
+    cmdgroup = 'datafiles'
     def run(self, options, args):
         dims = (' '.join(args)).strip()
         if not dims:
@@ -53,6 +56,7 @@ class locateFileCmd(CmdBase):
     name = "locate-file"
     description = "List file locations"
     args = "<file name>"
+    cmdgroup = 'datafiles'
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("No filename specified")
@@ -63,6 +67,7 @@ class getMetadataCmd(CmdBase):
     name = 'get-metadata'
     description = "Get metadata for a file"
     args = "<file name>"
+    cmdgroup = 'datafiles'
 
     def addOptions(self, parser):
         parser.add_option("--json", action="store_const", const="json", dest="format")
@@ -76,6 +81,7 @@ class declareFileCmd(CmdBase):
     name = 'declare-file'
     description = "Declare a new file into the database"
     args = "<name of metadata file>"
+    cmdgroup = 'datafiles'
 
     def run(self, options, args):
         if not args:
@@ -91,6 +97,7 @@ class listDefinitionsCmd(CmdBase):
     name = "list-definitions"
     options = [ "defname=", "user=", "group=", "after=", "before=" ]
     description = "List existing dataset definitions"
+    cmdgroup = 'definitions'
 
     def run(self, options, args):
         args = {}
@@ -111,6 +118,7 @@ class descDefinitionCmd(CmdBase):
     name = "describe-definition"
     description = "Describe an existing dataset definition"
     args = "<dataset definition>"
+    cmdgroup = 'definitions'
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -120,6 +128,7 @@ class listDefinitionFilesCmd(CmdBase):
     name = "list-definition-files"
     description = "List files in a dataset definition"
     args = "<dataset definition>"
+    cmdgroup = 'definitions'
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -130,6 +139,7 @@ class countDefinitionFilesCmd(CmdBase):
     name = "count-definition-files"
     description = "Count number of files in a dataset definition"
     args = "<dataset definition>"
+    cmdgroup = 'definitions'
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -140,6 +150,7 @@ class createDefinitionCmd(CmdBase):
     description = "Create a new dataset definition"
     args = "<new definition name> <dimensions>"
     options = [ "user=", "group=", "description=" ]
+    cmdgroup = 'definitions'
 
     def run(self, options, args):
         try:
@@ -155,6 +166,7 @@ class deleteDefinitionCmd(CmdBase):
     name = "delete-definition"
     description = "Delete an existing dataset definition"
     args = "<dataset definition>"
+    cmdgroup = 'definitions'
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
@@ -165,6 +177,7 @@ class startProjectCmd(CmdBase):
     description = "Start a new project"
     options = [ "defname=", "group=", "station=" ]
     args = "[project name]"
+    cmdgroup = 'projects'
 
     def run(self, options, args):
         if not options.defname:
@@ -181,6 +194,7 @@ class startProjectCmd(CmdBase):
 class ProjectCmdBase(CmdBase):
 
     options = [ "station=" ]
+    cmdgroup = 'projects'
 
     def _getProjectUrl(self, options, args):
         try:
@@ -225,6 +239,7 @@ class startProcessCmd(CmdBase):
     description = "Start a consumer process within a project"
     options = [ "appfamily=", "appname=", "appversion=", "delivery-location=", "url", "max-files=" ]
     args = "<project name or url>"
+    cmdgroup = 'projects'
 
     def run(self, options, args):
         if not options.appname or not options.appversion:
@@ -249,6 +264,7 @@ class startProcessCmd(CmdBase):
 
 class ProcessCmd(CmdBase):
     args = "(<process url> | <project url> <process id>)"
+    cmdgroup = 'projects'
 
     def makeProcessUrl(self, args):
         # note that this modifies args
@@ -291,43 +307,65 @@ class releaseFileCmd(ProcessCmd):
 
 commands = {
        }
+command_groups = {}
+
+group_descriptions = {
+        "datafiles": "Data file commands",
+        "definitions" : "Definition commands",
+        "projects" : "Project commands",
+        }
 
 # add all commands that define a name attribute to the list
 for o in locals().values():
     try:
         if issubclass(o, CmdBase) and hasattr(o, 'name') and o.name not in commands:
             commands[o.name] = o
+            command_groups.setdefault(o.cmdgroup,[]).append(o.name)
     except TypeError: pass
 
-def coreusage():
-    print "Available commands: "
-    for c in commands:
-        print "    %s" % c
-    return 1
+def command_list():
+    s = ["Available commands:",]
+    for g in command_groups:
+        if g is None: g = 'uncategorized'
+        group_desc = group_descriptions.get(g, g)
+        s.append("  %s:" % group_desc)
+        for c in sorted(command_groups[g]):
+            s.append("    %s" % c)
+        s.append('')
+    return '\n'.join(s)
+
+def _list_commands(option, opt, value, parser):
+    print command_list()
+    parser.exit()
 
 def main():
 
     usage = "%prog [base options] <command> [command options] ..."
     parser = optparse.OptionParser(usage=usage)
     parser.disable_interspersed_args()
+    parser.add_option('--help-commands', action="callback", callback=_list_commands, help="list available commands")
     base_options = optparse.OptionGroup(parser, "Base options")
-    base_options.add_option('-e','--experiment',dest='experiment')
-    base_options.add_option('--dev', action="store_true", dest='devel', default=False)
-    base_options.add_option('-s','--secure', action="store_true", dest='secure', default=False)
-    base_options.add_option('--cert', dest='cert')
-    base_options.add_option('--key', dest='key')
+    base_options.add_option('-e','--experiment',dest='experiment', help='use this experiment server. If not set, defaults to $SAM_EXPERIMENT.')
+    base_options.add_option('--dev', action="store_true", dest='devel', default=False, help='use development server')
+    base_options.add_option('-s','--secure', action="store_true", dest='secure', default=False, help='always use secure (SSL) mode')
+    base_options.add_option('--cert', dest='cert', help='x509 certificate for authentication. If not specified, use $X509_USER_CERT or standard grid proxy location')
+    base_options.add_option('--key', dest='key', help='x509 key for authentication (defaults to same as certificate)')
     parser.add_option_group(base_options)
 
     (options, args) = parser.parse_args(sys.argv[1:])
     if not args:
         print>>sys.stderr, "No command specified"
-        return coreusage()
+        parser.print_help(sys.stderr)
+        print>>sys.stderr, '\n',command_list()
+        return 1
 
     try:
         cmd = commands[args[0]]
     except KeyError:
         print>>sys.stderr, "Unknown command %s" % args[0]
-        return coreusage()
+        parser.print_help(sys.stderr)
+        print>>sys.stderr, '\n',command_list()
+        return 1
 
     # set up client
     samweb = SAMWebClient()
@@ -342,15 +380,21 @@ def main():
 
     for opt in command.options:
         attribs = {}
-        if opt.endswith('='):
+        if isinstance(opt, (tuple, list)):
+            optname, description = opt
+        else:
+            optname, description = opt, None
+        if optname.endswith('='):
             # value
-            opt = opt[:-1]
+            optname = optname[:-1]
         else:
             # flag
             attribs.update({"action":"store_true", "default":False})
-        attribs["dest"] = opt.replace('-','_')
+        if description:
+            attribs['help'] = description
+        attribs["dest"] = optname.replace('-','_')
 
-        cmd_options.add_option('--%s' % opt, **attribs)
+        cmd_options.add_option('--%s' % optname, **attribs)
 
     command.addOptions(cmd_options)
     parser.add_option_group(cmd_options)
