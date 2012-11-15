@@ -305,6 +305,32 @@ class releaseFileCmd(ProcessCmd):
         if not status: status = 'ok'
         self.samweb.releaseFile(processurl, filename)
 
+class listApplicationsCmd(CmdBase):
+    name = 'list-applications'
+    description = "List defined applications"
+    options = [ "family=", "name=", "version=" ]
+    cmdgroup = 'admin'
+    def run(self, options, args):
+        queryparams = {}
+        if options.family: queryparams["family"] = options.family
+        if options.name: queryparams["name"] = options.name
+        if options.version: queryparams["version"] = options.version
+        for app in self.samweb.listApplications(**queryparams):
+            print "%(family)s\t%(name)s\t%(version)s" % app
+
+class addApplicationCmd(CmdBase):
+    name = 'add-application'
+    description = "Add a new application to the database"
+    args = "<family> <name> <version>"
+    cmdgroup = 'admin'
+    def run(self, options, args):
+    
+        try:
+            family, name, version = args
+        except ValueError:
+            raise CmdError("Invalid arguments: must specify family, name, and version")
+        self.samweb.addApplication(family, name, version)
+
 commands = {
        }
 command_groups = {}
@@ -313,6 +339,7 @@ group_descriptions = {
         "datafiles": "Data file commands",
         "definitions" : "Definition commands",
         "projects" : "Project commands",
+        "admin": "Admin commands",
         }
 
 # add all commands that define a name attribute to the list
@@ -326,8 +353,8 @@ for o in locals().values():
 def command_list():
     s = ["Available commands:",]
     for g in command_groups:
-        if g is None: g = 'uncategorized'
-        group_desc = group_descriptions.get(g, g)
+        if g is None: group_desc = 'Uncategorized'
+        else: group_desc = group_descriptions.get(g, g)
         s.append("  %s:" % group_desc)
         for c in sorted(command_groups[g]):
             s.append("    %s" % c)
