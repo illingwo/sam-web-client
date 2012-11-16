@@ -85,7 +85,7 @@ class SAMWebClient(object):
         url = self._prepareURL(url, secure)
         return http.getURL(url, args, *cmdargs, **kwargs)
 
-    def postURL(self, url, args, secure=None, *cmdargs, **kwargs):
+    def postURL(self, url, args=None, secure=None, *cmdargs, **kwargs):
         url = self._prepareURL(url, secure)
         return http.postURL(url, args, *cmdargs, **kwargs)
 

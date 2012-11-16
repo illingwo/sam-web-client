@@ -331,6 +331,67 @@ class addApplicationCmd(CmdBase):
             raise CmdError("Invalid arguments: must specify family, name, and version")
         self.samweb.addApplication(family, name, version)
 
+class listUsersCmd(CmdBase):
+    name = 'list-users'
+    description = "List registered users"
+    cmdgroup = 'admin'
+    def run(self, options, args):
+        for user in self.samweb.listUsers():
+            print user
+
+class describeUserCmd(CmdBase):
+    name = 'describe-user'
+    description = 'List user information'
+    cmdgroup = 'admin'
+    args = "<username>"
+    def run(self, options, args):
+        try:
+            username, = args
+        except ValueError:
+            raise CmdError("Invalid argument: must specify username")
+
+        print self.samweb.describeUserText(username)
+
+class addUserCmd(CmdBase):
+    name = 'add-user'
+    description = "Add new user"
+    cmdgroup = 'admin'
+    options = ( 'first-name=', 'last-name=', 'email=', 'uid=', 'groups=' )
+    args = "<username>"
+    def run(self, options, args):
+        try:
+            username, = args
+        except ValueError:
+            raise CmdError("Invalid argument: must specify username")
+
+        if options.groups:
+            groups = options.groups.split(',')
+        else:
+            groups = None
+
+        self.samweb.addUser(username, firstname=options.first_name, lastname=options.last_name, email=options.email, uid=options.uid, groups=groups)
+
+class modifyUserCmd(CmdBase):
+    name = 'modify-user'
+    description = "Modify user"
+    cmdgroup = 'admin'
+    options = ( 'email=', 'groups=', 'addgroups=', 'status=' )
+    args = "<username>"
+    def run(self, options, args):
+        try:
+            username, = args
+        except ValueError:
+            raise CmdError("Invalid argument: must specify username")
+
+        args = {}
+        if options.email: args['email'] = options.email
+        if options.status: args['status'] = options.status
+        if options.groups:
+            args['groups'] = options.groups.split(',')
+        if options.addgroups:
+            args['addgroups'] = options.addgroups.split(',')
+        self.samweb.modifyUser(username, **args)
+
 commands = {
        }
 command_groups = {}
