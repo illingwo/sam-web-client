@@ -44,6 +44,7 @@ def getNextFile(samweb, processurl):
     while True:
         result= samweb.postURL(url, {})
         code = result.code
+        data = result.read().strip()
         if code == 202:
             retry_interval = 10
             retry_after = result.info().getheader('Retry-After')
@@ -55,17 +56,17 @@ def getNextFile(samweb, processurl):
         elif code == 204:
             raise NoMoreFiles()
         else:
-            return result.read().strip()
+            return data
 
 @samweb_method
 def releaseFile(samweb, processurl, filename, status="ok"):
     args = { 'filename' : filename, 'status':status }
-    samweb.postURL(processurl + '/releaseFile', args)
+    return samweb.postURL(processurl + '/releaseFile', args).read()
 
 @samweb_method
 def stopProject(samweb, projecturl):
     args = { "force" : 1 }
-    samweb.postURL(projecturl + "/endProject", args)
+    return samweb.postURL(projecturl + "/endProject", args).read()
 
 @samweb_method
 def projectSummary(samweb, projecturl):

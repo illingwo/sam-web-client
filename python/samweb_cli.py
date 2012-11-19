@@ -93,6 +93,25 @@ class declareFileCmd(CmdBase):
                 raise CmdError("Failed to open file: %s: " % (name, str(ex)))
             self.samweb.declareFile(mdfile=f)
 
+class retireFileCmd(CmdBase):
+    name = 'retire-file'
+    description = "Mark a file as retired"
+    args = "<file name> [file name] ..."
+    cmdgroup = 'datafiles'
+    def run(self, options, args):
+        if not args:
+            raise CmdError("No file names provided")
+        for filename in args:
+            rval = 0
+            try:
+                self.samweb.retireFile(filename)
+            except Error, ex:
+                rval = 1
+                print ex
+            else:
+                print "%s has been retired" % filename
+        return rval
+
 class listDefinitionsCmd(CmdBase):
     name = "list-definitions"
     options = [ "defname=", "user=", "group=", "after=", "before=" ]
