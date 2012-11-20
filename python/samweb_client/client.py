@@ -11,10 +11,10 @@ class SAMWebClient(object):
     _group = os.environ.get('SAM_GROUP')
     _station = os.environ.get('SAM_STATION')
 
-    def __init__(self, experiment=None, secure=False, cert=None, key=None, devel=False):
+    def __init__(self, experiment=None, secure=False, cert=None, key=None, devel=None):
         if experiment is not None: self.experiment = experiment
         self.secure = secure
-        self.devel = devel
+        if devel is not None: self.devel = devel
         self.set_client_certificate(cert, key)
 
     def get_experiment(self):

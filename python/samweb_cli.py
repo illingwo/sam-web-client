@@ -61,7 +61,7 @@ class locateFileCmd(CmdBase):
         if len(args) != 1:
             raise CmdError("No filename specified")
         filename = args[0]
-        print '\n'.join(self.samweb.locateFile(filename))
+        print '\n'.join( l['full_path'] for l in self.samweb.locateFile(filename))
 
 class getMetadataCmd(CmdBase):
     name = 'get-metadata'
@@ -75,7 +75,7 @@ class getMetadataCmd(CmdBase):
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Invalid or no argument specified")
-        print self.samweb.getMetadata(args[0],format=options.format)
+        print self.samweb.getMetadataText(args[0],format=options.format)
 
 class declareFileCmd(CmdBase):
     name = 'declare-file'

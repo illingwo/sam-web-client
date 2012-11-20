@@ -3,21 +3,27 @@ from samweb_client import json
 from samweb_client.client import samweb_method
 from samweb_client.http import quote
 
+from itertools import ifilter
+
 @samweb_method
 def listFiles(samweb, dimensions=None, defname=None):
     """ list files matching either a dataset definition or a dimensions string
     arguments:
       dimensions: string (default None)
       defname: string definition name (default None)"""
+
+    # This can return a potentially long list, so don't preload the result
+    # instead return a generator which reads it progressively
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/list' % defname)
+        result = samweb.getURL('/definitions/name/%s/files/list' % defname, preload_content=False)
     else:
         if len(dimensions) > 1024:
             method = samweb.postURL
         else:
             method = samweb.getURL
-        result = method('/files/list', {'dims':dimensions})
-    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
+        result = method('/files/list', {'dims':dimensions}, preload_content=False)
+
+    return ifilter( None, (l.strip() for l in result) )
 
 @samweb_method
 def parseDims(samweb, dimensions):
@@ -27,7 +33,7 @@ def parseDims(samweb, dimensions):
     else:
         method = samweb.getURL
     result = method('/files/list', {'dims':dimensions, "parse_only": "1"})
-    return result.read().strip()
+    return result.data.rstrip()
 
 @samweb_method
 def countFiles(samweb, dimensions=None, defname=None):
@@ -39,7 +45,7 @@ def countFiles(samweb, dimensions=None, defname=None):
         result = samweb.getURL('/definitions/name/%s/files/count' % defname)
     else:
         result = samweb.getURL('/files/count', {'dims':dimensions})
-    return long(result.read().strip())
+    return long(result.data.strip())
 
 def _make_file_path(filenameorid):
     try:
@@ -56,31 +62,26 @@ def locateFile(samweb, filenameorid):
         name or id of file
     """
     url = _make_file_path(filenameorid) + '/locations'
-    result = samweb.getURL(url)
-    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
+    result = samweb.getURL(url, format='json')
+    return result.data
 
 @samweb_method
-def _getMetadata(samweb, filenameorid, format=None):
-    url = _make_file_path(filenameorid) + '/metadata'
-    return samweb.getURL(url,format=format)
-
-@samweb_method
-def getMetadataDict(samweb, filenameorid):
+def getMetadata(samweb, filenameorid):
     """ Return metadata as a dictionary 
     arguments:
         name or id of file
     """
-    response = samweb._getMetadata(filenameorid, format='json')
-    return json.load()
+    response = samweb.getURL(_make_file_path(filenameorid) + '/metadata', format='json')
+    return response.data
 
 @samweb_method
-def getMetadata(samweb, filenameorid, format=None):
+def getMetadataText(samweb, filenameorid, format=None):
     """ Return metadata as a string
     arguments:
         name or id of file
     """
-    result = samweb._getMetadata(filenameorid, format=format)
-    return result.read().strip()
+    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', format=format, decode_json=False)
+    return result.data.rstrip()
 
 @samweb_method
 def declareFile(samweb, md=None, mdfile=None):
@@ -110,8 +111,20 @@ def listDefinitions(samweb, **queryCriteria):
     arguments:
         one or more key=string value pairs to pass to server
     """
-    result = samweb.getURL('/definitions/list', queryCriteria)
-    return filter( lambda l: l, (l.strip() for l in result.readlines()) )
+    result = samweb.getURL('/definitions/list', queryCriteria, preload_content=False)
+    return ifilter( None, (l.strip() for l in result.readlines()) )
+
+def _descDefinitionURL(samweb, defname):
+    return '/definitions/name/' + defname + '/describe'
+
+@samweb_method
+def descDefinitionDict(samweb, defname):
+    """ Describe a dataset definition
+    arguments:
+        definition name
+    """
+    result = self.getURL(_descDefinitionURL(defname), format='json')
+    return result.data
 
 @samweb_method
 def descDefinition(samweb, defname):
@@ -119,8 +132,8 @@ def descDefinition(samweb, defname):
     arguments:
         definition name
     """
-    result = samweb.getURL('/definitions/name/' + defname + '/describe')
-    return result.read().strip()
+    result = self.getURL(_descDefinitionURL(defname))
+    return result.data.rstrip()
 
 @samweb_method
 def createDefinition(samweb, defname, dims, user=None, group=None, description=None):
@@ -142,7 +155,7 @@ def createDefinition(samweb, defname, dims, user=None, group=None, description=N
         params["description"] = description
 
     result = samweb.postURL('/definitions/create', params)
-    return result.read().strip()
+    return result.data.rstrip()
 
 @samweb_method
 def deleteDefinition(samweb, defname):
@@ -153,5 +166,5 @@ def deleteDefinition(samweb, defname):
     (Definitions that have already been used cannot be deleted)
     """
     result = samweb.postURL('/definitions/name/%s/delete' % defname, {})
-    return result.read().strip()
+    return result.data.rstrip()
 

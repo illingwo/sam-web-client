@@ -10,7 +10,7 @@ def listApplications(samweb, **queryCriteria):
 
 @samweb_method
 def addApplication(samweb, family, name, version):
-    samweb.postURL('/values/applications', {"family":family, "name":name, "version":version}, secure=True)
+    return samweb.postURL('/values/applications', {"family":family, "name":name, "version":version}, secure=True).data.rstrip()
 
 @samweb_method
 def listUsers(samweb):
@@ -29,7 +29,7 @@ def describeUser(samweb, username):
 @samweb_method
 def describeUserText(samweb, username):
     result = samweb._describeUser(username)
-    return result.read().rstrip()
+    return result.data.rstrip()
 
 @samweb_method
 def addUser(samweb, username, firstname=None, lastname=None, email=None, uid=None, groups=None):
@@ -47,8 +47,8 @@ def addUser(samweb, username, firstname=None, lastname=None, email=None, uid=Non
             userdata['uid'] = uid
     if groups:
         userdata["groups"] = groups
-    samweb.postURL('/users', body=json.dumps(userdata), content_type='application/json', secure=True)
+    return samweb.postURL('/users', body=json.dumps(userdata), content_type='application/json', secure=True).data.rstrip()
 
 @samweb_method
 def modifyUser(samweb, username, **args):
-    samweb.postURL('/users/name/%s' % quote(username), body=json.dumps(args), content_type='application/json', secure=True)
+    return samweb.postURL('/users/name/%s' % quote(username), body=json.dumps(args), content_type='application/json', secure=True).data.rstrip()

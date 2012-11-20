@@ -5,7 +5,7 @@ from urllib2 import urlopen, URLError, HTTPError, Request
 
 import time, socket, os
 
-from samweb_client import Error
+from samweb_client import Error, json
 
 class SAMWebHTTPError(Error):
     def __init__(self, method, url, args, code, msg):
@@ -23,6 +23,65 @@ class SAMWebHTTPError(Error):
 
 maxtimeout=60*30
 maxretryinterval = 60
+
+class Response(object):
+    """ Wrapper for the response object. Provides a data attribue that contains the body of the response.
+    If preload_content = True, then the body is read immediately and the connection closed (note that iteration
+    and read*() methods will not work in this case), otherwise body is only filled on demand.
+    If decode_json = True and the response has the appropriate content-type then data will be the decoded JSON object.
+    """
+
+    def __init__(self, wrapped, preload_content=True, decode_json=True):
+        self._wrapped = wrapped
+        self.decode_json = decode_json
+        if preload_content:
+            self._load_data()
+        else:
+            self._data = None
+
+    def _load_data(self):
+        if self.decode_json and self._wrapped.headers.get('Content-Type') in ('application/json', 'text/json'):
+            self._data = json.load(self._wrapped)
+        else:
+            self._data = self._wrapped.read()
+        self._wrapped.close()
+
+    @property
+    def data(self):
+        if self._data is not None:
+            return self._data
+        else:
+            self._load_data()
+            return self._data
+    @property
+    def code(self):
+        return self._wrapped.code
+    @property
+    def headers(self):
+        return self._wrapped.headers
+
+    def read(self, *args):
+        return self._wrapped.read(*args)
+
+    def close(self):
+        self._wrapped.close()
+
+    def readlines(self, *args):
+        return self._wrapped.readlines()
+
+    # iterable functions
+    def __iter__(self):
+        return self
+    def next(self):
+        return self._wrapped.next()
+
+    def __getattr__(self, attr):
+        return getattr(self._wrapped, attr)
+
+    def __del__(self):
+        try:
+            self._wrapped.close()
+        except: pass
 
 # handler to cope with client certificate auth
 # Note that this does not verify the server certificate
@@ -45,13 +104,13 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
-def postURL(url, args=None, body=None, content_type=None):
-    return _doURL(url, action='POST', args=args, body=body, content_type=content_type)
+def postURL(url, args=None, body=None, content_type=None, **kwargs):
+    return _doURL(url, action='POST', args=args, body=body, content_type=content_type, **kwargs)
 
-def getURL(url, args=None,format=None):
-    return _doURL(url,action='GET',args=args,format=format)
+def getURL(url, args=None,format=None, **kwargs):
+    return _doURL(url,action='GET',args=args,format=format, **kwargs)
 
-def _doURL(url, action='GET', args=None, format=None, body=None, content_type=None):
+def _doURL(url, action='GET', args=None, format=None, body=None, content_type=None, preload_content=True, decode_json=True):
     headers = {}
     if format=='json':
         headers['Accept'] = 'application/json'
@@ -80,8 +139,9 @@ def _doURL(url, action='GET', args=None, format=None, body=None, content_type=No
         except HTTPError, x:
             #python 2.4 treats 201 and up as errors instead of normal return codes
             if 201 <= x.code <= 299:
-                return x
+                return Response(x)
             errmsg = x.read().strip()
+            x.close() # ensure that the socket is closed (otherwise it may hang around in the traceback object)
             # retry server errors (excluding internal errors)
             if x.code > 500 and time.time() < tmout:
                 print "Error %s" % errmsg
@@ -103,7 +163,7 @@ def _doURL(url, action='GET', args=None, format=None, body=None, content_type=No
                     raise Error("SSL error: %s" % x.reason)
             print 'URL %s not responding' % url
         else:
-            return remote
+            return Response(remote, preload_content=preload_content, decode_json=decode_json)
 
         time.sleep(retryinterval)
         retryinterval*=2
