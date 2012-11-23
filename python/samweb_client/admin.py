@@ -1,7 +1,7 @@
 
 from samweb_client import json, Error
 from samweb_client.client import samweb_method
-from samweb_client.http import quote, quote_plus
+from samweb_client.http_client import escape_url_path
 
 @samweb_method
 def listApplications(samweb, **queryCriteria):
@@ -19,7 +19,7 @@ def listUsers(samweb):
 
 @samweb_method
 def _describeUser(samweb, username, format=None):
-    return samweb.getURL('/users/name/%s' % quote(username), format=format)
+    return samweb.getURL('/users/name/%s' % escape_url_path(username), format=format)
 
 @samweb_method
 def describeUser(samweb, username):
@@ -51,4 +51,4 @@ def addUser(samweb, username, firstname=None, lastname=None, email=None, uid=Non
 
 @samweb_method
 def modifyUser(samweb, username, **args):
-    return samweb.postURL('/users/name/%s' % quote(username), data=json.dumps(args), content_type='application/json', secure=True).text.rstrip()
+    return samweb.postURL('/users/name/%s' % escape_url_path(username), data=json.dumps(args), content_type='application/json', secure=True).text.rstrip()

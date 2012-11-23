@@ -5,8 +5,6 @@ from urllib2 import urlopen, URLError, HTTPError, Request
 
 import time,os, socket, sys, optparse, user, pwd
 
-
-from samweb_client.http import *
 from samweb_client import *
 
 class CmdError(Error): pass

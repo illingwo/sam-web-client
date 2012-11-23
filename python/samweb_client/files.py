@@ -1,7 +1,7 @@
 
 from samweb_client import json
 from samweb_client.client import samweb_method
-from samweb_client.http import quote
+from samweb_client.http_client import escape_url_path
 
 from itertools import ifilter
 
@@ -57,7 +57,7 @@ def _make_file_path(filenameorid):
         fileid = long(filenameorid)
         path = '/files/id/%d' % fileid
     except ValueError:
-        path = '/files/name/%s' % quote(filenameorid)
+        path = '/files/name/%s' % escape_url_path(filenameorid)
     return path
 
 @samweb_method

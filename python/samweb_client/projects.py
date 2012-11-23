@@ -1,6 +1,5 @@
 
 from samweb_client.client import samweb_method
-from samweb_client.http import quote
 
 class NoMoreFiles(Exception):
   pass

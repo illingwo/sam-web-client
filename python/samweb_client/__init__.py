@@ -15,6 +15,7 @@ except ImportError:
 class Error(Exception):
   pass
 
+import http_client
 from client import SAMWebClient 
 import projects
 import files

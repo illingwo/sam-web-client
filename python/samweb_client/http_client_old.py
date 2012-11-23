@@ -6,19 +6,7 @@ from urllib2 import urlopen, URLError, HTTPError, Request
 import time, socket, os
 
 from samweb_client import Error, json
-
-class SAMWebHTTPError(Error):
-    def __init__(self, method, url, code, msg):
-        self.method = method
-        self.url = url
-        self.code = code
-        self.msg = msg
-
-    def __str__(self):
-        if 400 <= self.code < 500:
-            return self.msg
-        else:
-            return "HTTP error: %(code)d %(msg)s\nURL: %(url)s" % self.__dict__
+from http_client import make_ssl_error, SAMWebSSLError, get_standard_certificate_path
 
 maxtimeout=60*30
 maxretryinterval = 60
@@ -142,14 +130,7 @@ def _doURL(url, action='GET', params=None, format=None, data=None, content_type=
                 raise SAMWebHTTPError(action, url, x.code, errmsg)
         except URLError, x:
             if isinstance(x.reason, socket.sslerror):
-                msg = str(x.reason)
-                if 'error:14094410' in msg:
-                    if client_cert:
-                        raise Error("SSL error: %s: is client certificate valid?" % msg)
-                    else:
-                        raise Error("SSL error: %s: no client certificate has been installed" % msg)
-                else:
-                    raise Error("SSL error: %s" % x.reason)
+                raise make_ssl_error(str(x.reason), client_cert)
             print 'URL %s not responding' % url
         else:
             return Response(remote, prefetch=prefetch)
@@ -163,16 +144,11 @@ client_cert = None
 def use_client_certificate(cert=None, key=None):
     """ Use the given certificate and key for client ssl authentication """
     if not cert:
-        cert = key = os.environ.get('X509_USER_PROXY')
-        if not cert:
-            # look in standard place for cert
-            proxypath = '/tmp/x509up_u%d' % os.getuid()
-            if os.path.exists(proxypath):
-                cert = key = proxypath
+        cert = key = get_standard_certificate_path()
     if cert:
         opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
         urllib2.install_opener(opener)
         global client_cert
         client_cert = cert
 
-__all__ = ['postURL', 'getURL', 'use_client_certificate', 'quote', 'quote_plus']
+__all__ = ['postURL', 'getURL', 'use_client_certificate' ]
