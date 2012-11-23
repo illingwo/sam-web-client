@@ -25,58 +25,52 @@ maxtimeout=60*30
 maxretryinterval = 60
 
 class Response(object):
-    """ Wrapper for the response object. Provides a data attribue that contains the body of the response.
-    If preload_content = True, then the body is read immediately and the connection closed (note that iteration
-    and read*() methods will not work in this case), otherwise body is only filled on demand.
-    If decode_json = True and the response has the appropriate content-type then data will be the decoded JSON object.
+    """ Wrapper for the response object. Provides a text attribue that contains the body of the response.
+    If prefetch = True, then the body is read immediately and the connection closed, else the data is not
+    read from the server until you try to access it
+
+    The API tries to be similar to that of the requests library, since it'd be nice if we could replace urllib2
+    with that. However, it doesn't work with python 2.4, which we need for SL5 support.
     """
 
-    def __init__(self, wrapped, preload_content=True, decode_json=True):
+    def __init__(self, wrapped, prefetch=True):
         self._wrapped = wrapped
-        self.decode_json = decode_json
-        if preload_content:
+        if prefetch:
             self._load_data()
         else:
             self._data = None
 
     def _load_data(self):
-        if self.decode_json and self._wrapped.headers.get('Content-Type') in ('application/json', 'text/json'):
-            self._data = json.load(self._wrapped)
-        else:
-            self._data = self._wrapped.read()
+        self._data = self._wrapped.read()
         self._wrapped.close()
 
     @property
-    def data(self):
+    def text(self):
         if self._data is not None:
             return self._data
         else:
             self._load_data()
             return self._data
     @property
-    def code(self):
+    def status_code(self):
         return self._wrapped.code
     @property
     def headers(self):
         return self._wrapped.headers
+    @property
+    def json(self):
+        if self._data is None:
+            return json.load(self._wrapped)
+        else:
+            return json.loads(self._data)
 
-    def read(self, *args):
-        return self._wrapped.read(*args)
-
-    def close(self):
-        self._wrapped.close()
-
-    def readlines(self, *args):
-        return self._wrapped.readlines()
-
-    # iterable functions
-    def __iter__(self):
-        return self
-    def next(self):
-        return self._wrapped.next()
-
-    def __getattr__(self, attr):
-        return getattr(self._wrapped, attr)
+    def iter_lines(self):
+        if self._data is None:
+            for l in self._wrapped:
+                yield l
+        else:
+            for l in self._data.split('\n'):
+                yield l
 
     def __del__(self):
         try:
@@ -110,7 +104,7 @@ def postURL(url, args=None, body=None, content_type=None, **kwargs):
 def getURL(url, args=None,format=None, **kwargs):
     return _doURL(url,action='GET',args=args,format=format, **kwargs)
 
-def _doURL(url, action='GET', args=None, format=None, body=None, content_type=None, preload_content=True, decode_json=True):
+def _doURL(url, action='GET', args=None, format=None, body=None, content_type=None, prefetch=True):
     headers = {}
     if format=='json':
         headers['Accept'] = 'application/json'
@@ -163,7 +157,7 @@ def _doURL(url, action='GET', args=None, format=None, body=None, content_type=No
                     raise Error("SSL error: %s" % x.reason)
             print 'URL %s not responding' % url
         else:
-            return Response(remote, preload_content=preload_content, decode_json=decode_json)
+            return Response(remote, prefetch=prefetch)
 
         time.sleep(retryinterval)
         retryinterval*=2

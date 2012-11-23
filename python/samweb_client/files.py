@@ -10,20 +10,25 @@ def listFiles(samweb, dimensions=None, defname=None):
     """ list files matching either a dataset definition or a dimensions string
     arguments:
       dimensions: string (default None)
-      defname: string definition name (default None)"""
+      defname: string definition name (default None)
+    
+    returns:
+      a generator producing file names (note that the network connection may not be closed
+        until you have read the entire list)
+    """
 
     # This can return a potentially long list, so don't preload the result
     # instead return a generator which reads it progressively
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/list' % defname, preload_content=False)
+        result = samweb.getURL('/definitions/name/%s/files/list' % defname, prefetch=False)
     else:
         if len(dimensions) > 1024:
             method = samweb.postURL
         else:
             method = samweb.getURL
-        result = method('/files/list', {'dims':dimensions}, preload_content=False)
+        result = method('/files/list', {'dims':dimensions}, prefetch=False)
 
-    return ifilter( None, (l.strip() for l in result) )
+    return ifilter( None, (l.strip() for l in result.iter_lines()) )
 
 @samweb_method
 def parseDims(samweb, dimensions):
@@ -33,7 +38,7 @@ def parseDims(samweb, dimensions):
     else:
         method = samweb.getURL
     result = method('/files/list', {'dims':dimensions, "parse_only": "1"})
-    return result.data.rstrip()
+    return result.text.rstrip()
 
 @samweb_method
 def countFiles(samweb, dimensions=None, defname=None):
@@ -45,7 +50,7 @@ def countFiles(samweb, dimensions=None, defname=None):
         result = samweb.getURL('/definitions/name/%s/files/count' % defname)
     else:
         result = samweb.getURL('/files/count', {'dims':dimensions})
-    return long(result.data.strip())
+    return long(result.text.strip())
 
 def _make_file_path(filenameorid):
     try:
@@ -63,7 +68,7 @@ def locateFile(samweb, filenameorid):
     """
     url = _make_file_path(filenameorid) + '/locations'
     result = samweb.getURL(url, format='json')
-    return result.data
+    return result.json
 
 @samweb_method
 def getMetadata(samweb, filenameorid):
@@ -72,7 +77,7 @@ def getMetadata(samweb, filenameorid):
         name or id of file
     """
     response = samweb.getURL(_make_file_path(filenameorid) + '/metadata', format='json')
-    return response.data
+    return response.json
 
 @samweb_method
 def getMetadataText(samweb, filenameorid, format=None):
@@ -80,8 +85,8 @@ def getMetadataText(samweb, filenameorid, format=None):
     arguments:
         name or id of file
     """
-    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', format=format, decode_json=False)
-    return result.data.rstrip()
+    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', format=format)
+    return result.text.rstrip()
 
 @samweb_method
 def declareFile(samweb, md=None, mdfile=None):
@@ -94,7 +99,7 @@ def declareFile(samweb, md=None, mdfile=None):
         body = json.dumps(md)
     else:
         body = mdfile.read()
-    return samweb.postURL('/files', body=body, content_type='application/json', secure=True).read()
+    return samweb.postURL('/files', body=body, content_type='application/json', secure=True).text
 
 @samweb_method
 def retireFile(samweb, filename):
@@ -103,7 +108,7 @@ def retireFile(samweb, filename):
         filename
     """
     url = _make_file_path(filename) + '/retired_date'
-    return samweb.postURL(url, secure=True).read()
+    return samweb.postURL(url, secure=True).text
 
 @samweb_method
 def listDefinitions(samweb, **queryCriteria):
@@ -111,8 +116,8 @@ def listDefinitions(samweb, **queryCriteria):
     arguments:
         one or more key=string value pairs to pass to server
     """
-    result = samweb.getURL('/definitions/list', queryCriteria, preload_content=False)
-    return ifilter( None, (l.strip() for l in result.readlines()) )
+    result = samweb.getURL('/definitions/list', queryCriteria, prefetch=False)
+    return ifilter( None, (l.strip() for l in result.iter_lines()) )
 
 def _descDefinitionURL(samweb, defname):
     return '/definitions/name/' + defname + '/describe'
@@ -124,7 +129,7 @@ def descDefinitionDict(samweb, defname):
         definition name
     """
     result = self.getURL(_descDefinitionURL(defname), format='json')
-    return result.data
+    return result.text
 
 @samweb_method
 def descDefinition(samweb, defname):
@@ -133,7 +138,7 @@ def descDefinition(samweb, defname):
         definition name
     """
     result = self.getURL(_descDefinitionURL(defname))
-    return result.data.rstrip()
+    return result.text.rstrip()
 
 @samweb_method
 def createDefinition(samweb, defname, dims, user=None, group=None, description=None):
@@ -155,7 +160,7 @@ def createDefinition(samweb, defname, dims, user=None, group=None, description=N
         params["description"] = description
 
     result = samweb.postURL('/definitions/create', params)
-    return result.data.rstrip()
+    return result.text.rstrip()
 
 @samweb_method
 def deleteDefinition(samweb, defname):
@@ -166,5 +171,5 @@ def deleteDefinition(samweb, defname):
     (Definitions that have already been used cannot be deleted)
     """
     result = samweb.postURL('/definitions/name/%s/delete' % defname, {})
-    return result.data.rstrip()
+    return result.text.rstrip()
 

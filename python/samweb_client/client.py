@@ -12,6 +12,7 @@ class SAMWebClient(object):
     _station = os.environ.get('SAM_STATION')
 
     def __init__(self, experiment=None, secure=False, cert=None, key=None, devel=None):
+        self.devel = False
         if experiment is not None: self.experiment = experiment
         self.secure = secure
         if devel is not None: self.devel = devel

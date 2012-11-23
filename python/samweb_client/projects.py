@@ -12,7 +12,7 @@ def makeProject(samweb, defname, project, station=None, user=None, group=None):
     if not group: group = samweb_connect.group
     args = {'name':project,'station':station,"defname":defname,"username":user,"group":group}
     result = samweb.postURL('/startProject', args)
-    return {'project':project,'dataset':defname,'projectURL':result.data.strip()}
+    return {'project':project,'dataset':defname,'projectURL':result.text.strip()}
 
 @samweb_method
 def findProject(samweb, project, station=None):
@@ -20,7 +20,7 @@ def findProject(samweb, project, station=None):
     if station: args['station'] = station
     else: args['station'] = samweb_connect.station
     result = samweb.getURL('/findProject', args)
-    return result.data.strip()
+    return result.text.strip()
 
 @samweb_method
 def makeProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
@@ -35,15 +35,15 @@ def makeProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLoca
     if maxFiles:
         args["filelimit"] = maxFiles
     result = samweb.postURL(projecturl + '/establishProcess', args)
-    return result.data.strip()
+    return result.text.strip()
 
 @samweb_method
 def getNextFile(samweb, processurl):
     url = processurl + '/getNextFile'
     while True:
         result= samweb.postURL(url, {})
-        code = result.code
-        data = result.data.strip()
+        code = result.status_code
+        data = result.text.strip()
         if code == 202:
             retry_interval = 10
             retry_after = result.info().getheader('Retry-After')
@@ -60,16 +60,16 @@ def getNextFile(samweb, processurl):
 @samweb_method
 def releaseFile(samweb, processurl, filename, status="ok"):
     args = { 'filename' : filename, 'status':status }
-    return samweb.postURL(processurl + '/releaseFile', args).data.rstrip()
+    return samweb.postURL(processurl + '/releaseFile', args).text.rstrip()
 
 @samweb_method
 def stopProject(samweb, projecturl):
     args = { "force" : 1 }
-    return samweb.postURL(projecturl + "/endProject", args).data.rstrip()
+    return samweb.postURL(projecturl + "/endProject", args).text.rstrip()
 
 @samweb_method
 def projectSummary(samweb, projecturl):
-    return samweb.getURL(projecturl + "/summary").data.rstrip()
+    return samweb.getURL(projecturl + "/summary").text.rstrip()
 
 """
 
