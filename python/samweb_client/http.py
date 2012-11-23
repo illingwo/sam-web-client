@@ -8,10 +8,9 @@ import time, socket, os
 from samweb_client import Error, json
 
 class SAMWebHTTPError(Error):
-    def __init__(self, method, url, args, code, msg):
+    def __init__(self, method, url, code, msg):
         self.method = method
         self.url = url
-        self.args = args
         self.code = code
         self.msg = msg
 
@@ -98,33 +97,33 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
-def postURL(url, args=None, body=None, content_type=None, **kwargs):
-    return _doURL(url, action='POST', args=args, body=body, content_type=content_type, **kwargs)
+def postURL(url, data=None, content_type=None, **kwargs):
+    return _doURL(url, action='POST', data=data, content_type=content_type, **kwargs)
 
-def getURL(url, args=None,format=None, **kwargs):
-    return _doURL(url,action='GET',args=args,format=format, **kwargs)
+def getURL(url, params=None,format=None, **kwargs):
+    return _doURL(url,action='GET',params=params,format=format, **kwargs)
 
-def _doURL(url, action='GET', args=None, format=None, body=None, content_type=None, prefetch=True):
+def _doURL(url, action='GET', params=None, format=None, data=None, content_type=None, prefetch=True):
     headers = {}
     if format=='json':
         headers['Accept'] = 'application/json'
 
-    params=None
-    if action =='POST':
-        if body is None:
-            if args is None: args = {}
-            params = urlencode(args)
-    else:
-        if args is not None:
-            if '?' not in url: url += '?'
-            else: url += '&'
-            url += urlencode(args)
+    if action in ('POST', 'PUT'):
+        # these always require body data
+        if data is None:
+            data = ''
+    if isinstance(data, dict):
+        data = urlencode(data)
+    if params is not None:
+        if '?' not in url: url += '?'
+        else: url += '&'
+        url += urlencode(params)
     tmout = time.time() + maxtimeout
     retryinterval = 1
 
-    request = Request(url, data=params, headers=headers)
-    if body:
-        request.add_data(body)
+    request = Request(url, headers=headers)
+    if data:
+        request.add_data(data)
     if content_type:
         request.add_header('Content-Type', content_type)
     while True:
@@ -140,11 +139,7 @@ def _doURL(url, action='GET', args=None, format=None, body=None, content_type=No
             if x.code > 500 and time.time() < tmout:
                 print "Error %s" % errmsg
             else:
-                if action == 'POST':
-                    msg = "POST to %s, args = %s" % ( url, args)
-                else:
-                    msg = "GET of %s" % (url, )
-                raise SAMWebHTTPError(action, url, args, x.code, errmsg)
+                raise SAMWebHTTPError(action, url, x.code, errmsg)
         except URLError, x:
             if isinstance(x.reason, socket.sslerror):
                 msg = str(x.reason)

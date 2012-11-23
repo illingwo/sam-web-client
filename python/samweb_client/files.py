@@ -96,10 +96,10 @@ def declareFile(samweb, md=None, mdfile=None):
         mdfile: file object containing metadata (must be in json format)
     """
     if md:
-        body = json.dumps(md)
+        data = json.dumps(md)
     else:
-        body = mdfile.read()
-    return samweb.postURL('/files', body=body, content_type='application/json', secure=True).text
+        data = mdfile.read()
+    return samweb.postURL('/files', data=data, content_type='application/json', secure=True).text
 
 @samweb_method
 def retireFile(samweb, filename):
@@ -119,7 +119,7 @@ def listDefinitions(samweb, **queryCriteria):
     result = samweb.getURL('/definitions/list', queryCriteria, prefetch=False)
     return ifilter( None, (l.strip() for l in result.iter_lines()) )
 
-def _descDefinitionURL(samweb, defname):
+def _descDefinitionURL(defname):
     return '/definitions/name/' + defname + '/describe'
 
 @samweb_method
@@ -137,7 +137,7 @@ def descDefinition(samweb, defname):
     arguments:
         definition name
     """
-    result = self.getURL(_descDefinitionURL(defname))
+    result = samweb.getURL(_descDefinitionURL(defname))
     return result.text.rstrip()
 
 @samweb_method
@@ -153,8 +153,8 @@ def createDefinition(samweb, defname, dims, user=None, group=None, description=N
 
     params = { "defname": defname,
              "dims": dims,
-             "user": user or samweb_connect.user,
-             "group": group or samweb_connect.group,
+             "user": user or samweb.user,
+             "group": group or samweb.group,
              }
     if description:
         params["description"] = description

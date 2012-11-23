@@ -82,13 +82,13 @@ class SAMWebClient(object):
             url = self.get_baseurl(secure) + url
         return url
 
-    def getURL(self, url, args=None, secure=None, *cmdargs, **kwargs):
+    def getURL(self, url, params=None, secure=None, *args, **kwargs):
         url = self._prepareURL(url, secure)
-        return http.getURL(url, args, *cmdargs, **kwargs)
+        return http.getURL(url, params=params, *args, **kwargs)
 
-    def postURL(self, url, args=None, secure=None, *cmdargs, **kwargs):
+    def postURL(self, url, data=None, secure=None, *args, **kwargs):
         url = self._prepareURL(url, secure)
-        return http.postURL(url, args, *cmdargs, **kwargs)
+        return http.postURL(url, data=data, *args, **kwargs)
 
 def samweb_method(m):
     """ Attach this function as a method of the SAMWebClient class """

@@ -47,8 +47,8 @@ def addUser(samweb, username, firstname=None, lastname=None, email=None, uid=Non
             userdata['uid'] = uid
     if groups:
         userdata["groups"] = groups
-    return samweb.postURL('/users', body=json.dumps(userdata), content_type='application/json', secure=True).text.rstrip()
+    return samweb.postURL('/users', data=json.dumps(userdata), content_type='application/json', secure=True).text.rstrip()
 
 @samweb_method
 def modifyUser(samweb, username, **args):
-    return samweb.postURL('/users/name/%s' % quote(username), body=json.dumps(args), content_type='application/json', secure=True).text.rstrip()
+    return samweb.postURL('/users/name/%s' % quote(username), data=json.dumps(args), content_type='application/json', secure=True).text.rstrip()
