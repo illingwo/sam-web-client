@@ -5,21 +5,12 @@ from samweb_client import Error, json
 from http_client import make_ssl_error, SAMWebHTTPError,  get_standard_certificate_path
 
 _cert = None
-def use_client_certificate(cert=None, key=None):
-    global _cert
-    if cert:
-        if key:
-            _cert = (cert, key)
-        else:
-            _cert = cert
-    else:
-        _cert = get_standard_certificate_path()
 
 maxtimeout=60*30
 maxretryinterval = 60
 
 def _request_wrapper(func):
-    def wrapper(url, format=None, content_type=None, *args, **kwargs):
+    def wrapper(self, url, format=None, content_type=None, *args, **kwargs):
         headers = {}
         if format=='json':
             headers['Accept'] = 'application/json'
@@ -30,20 +21,19 @@ def _request_wrapper(func):
         if headers:
             kwargs['headers'] = headers
 
-        if url.startswith('https:'):
-            kwargs.update({'verify':False, 'cert':_cert})
+        self._make_session()
 
         tmout = time.time() + maxtimeout
         retryinterval = 1
 
         while True:
             try:
-                response = func(url, *args, **kwargs)
+                response = func(self, url, *args, **kwargs)
                 response.raise_for_status() # convert errors into exceptions
                 return response
             except requests.exceptions.SSLError, ex:
                 msg = ex.message
-                if isinstance(_cert, tuple): cert = cert[0]
+                if isinstance(self._cert, tuple): cert = self._cert[0]
                 else: cert = _cert
                 raise make_ssl_error(msg, cert)
             except requests.exceptions.HTTPError, ex:
@@ -64,11 +54,36 @@ def _request_wrapper(func):
 
     return wrapper
 
-@_request_wrapper
-def getURL(url, params=None, **kwargs):
-    return requests.get(url, params=params, **kwargs)
+def get_client():
+    return RequestsHTTPClient()
 
-@_request_wrapper
-def postURL(url, data=None, **kwargs):
-    return requests.post(url, data=data, **kwargs)
+import sys
+
+class RequestsHTTPClient(object):
+
+    def __init__(self):
+        self._session = None
+        self._cert =None
+
+    def _make_session(self):
+        if self._session is None:
+            self._session = requests.Session(verify=False, cert=self._cert, config={'verbose': sys.stderr})
+
+    def use_client_certificate(self, cert=None, key=None):
+        if cert:
+            if key:
+                self._cert = (cert, key)
+            else:
+                self._cert = cert
+        else:
+            self._cert = get_standard_certificate_path()
+        self._session = None # This will clear any existing session with a different cert
+
+    @_request_wrapper
+    def getURL(self, url, params=None, **kwargs):
+        return self._session.get(url, params=params, **kwargs)
+
+    @_request_wrapper
+    def postURL(self, url, data=None, **kwargs):
+        return self._session.post(url, data=data, **kwargs)
 

@@ -8,6 +8,12 @@ import time, socket, os
 from samweb_client import Error, json
 from http_client import make_ssl_error, SAMWebSSLError, get_standard_certificate_path
 
+def get_client():
+    # There is no local state, so just return the module
+    import sys
+    return sys.modules[__name__]
+
+
 maxtimeout=60*30
 maxretryinterval = 60
 
@@ -151,4 +157,4 @@ def use_client_certificate(cert=None, key=None):
         global client_cert
         client_cert = cert
 
-__all__ = ['postURL', 'getURL', 'use_client_certificate' ]
+__all__ = ['postURL', 'getURL', 'use_client_certificate', 'get_client' ]

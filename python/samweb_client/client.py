@@ -16,6 +16,7 @@ class SAMWebClient(object):
         if experiment is not None: self.experiment = experiment
         self.secure = secure
         if devel is not None: self.devel = devel
+        self.http_client = http_client.get_client()
         self.set_client_certificate(cert, key)
 
     def get_experiment(self):
@@ -32,7 +33,7 @@ class SAMWebClient(object):
     experiment = property(get_experiment, set_experiment)
 
     def set_client_certificate(self, cert, key=None):
-        http_client.use_client_certificate(cert, key)
+        self.http_client.use_client_certificate(cert, key)
 
     def get_baseurl(self, secure=None):
         secure = secure or self.secure 
@@ -84,11 +85,11 @@ class SAMWebClient(object):
 
     def getURL(self, url, params=None, secure=None, *args, **kwargs):
         url = self._prepareURL(url, secure)
-        return http_client.getURL(url, params=params, *args, **kwargs)
+        return self.http_client.getURL(url, params=params, *args, **kwargs)
 
     def postURL(self, url, data=None, secure=None, *args, **kwargs):
         url = self._prepareURL(url, secure)
-        return http_client.postURL(url, data=data, *args, **kwargs)
+        return self.http_client.postURL(url, data=data, *args, **kwargs)
 
 def samweb_method(m):
     """ Attach this function as a method of the SAMWebClient class """
