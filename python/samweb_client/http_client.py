@@ -1,19 +1,11 @@
 
 from samweb_client import Error
 
-class SAMWebSSLError(Error):
+class SAMWebConnectionError(Error):
     pass
 
-def make_ssl_error(msg, cert):
-    """ Try to make sense of ssl errors and return a suitable exception object """
-    if 'error:14094410' in msg:
-        if cert:
-            errmsg = "SSL error: %s: is client certificate valid?" % msg
-        else:
-            errmsg = "SSL error: %s: no client certificate has been installed" % msg
-    else:
-        errmsg = "SSL error: %s" % msg
-    return SAMWebSSLError(errmsg)
+class SAMWebSSLError(SAMWebConnectionError):
+    pass
 
 class SAMWebHTTPError(Error):
     def __init__(self, method, url, code, msg):
@@ -28,20 +20,44 @@ class SAMWebHTTPError(Error):
         else:
             return "HTTP error: %(code)d %(msg)s\nURL: %(url)s" % self.__dict__
 
-def get_standard_certificate_path():
-    import os
-    cert = os.environ.get('X509_USER_PROXY')
-    if not cert:
-        # look in standard place for cert
-        proxypath = '/tmp/x509up_u%d' % os.getuid()
-        if os.path.exists(proxypath):
-            cert = proxypath
-    return cert
+class SAMWebHTTPClient(object):
+    maxtimeout=60*30 # default max timeout
+    maxretryinterval = 60 # default max retry interval
+    verboseretries = True # whether to print output when retrying
+
+    def __init__(self, maxtimeout=None, maxretryinterval=None, verboseretries=None, *args, **kwargs):
+        if maxtimeout is not None:
+            self.maxtimeout = maxtimeout
+        if maxretryinterval is not None:
+            self.maxretryinterval = maxretryinterval
+        if verboseretries is not None:
+            self.verboseretries = verboseretries
+
+    def make_ssl_error(self, msg):
+        """ Try to make sense of ssl errors and return a suitable exception object """
+        if 'error:14094410' in msg:
+            if self._cert:
+                errmsg = "SSL error: %s: is client certificate valid?" % msg
+            else:
+                errmsg = "SSL error: %s: no client certificate has been installed" % msg
+        else:
+            errmsg = "SSL error: %s" % msg
+        return SAMWebSSLError(errmsg)
+
+    def get_standard_certificate_path(self):
+        import os
+        cert = os.environ.get('X509_USER_PROXY')
+        if not cert:
+            # look in standard place for cert
+            proxypath = '/tmp/x509up_u%d' % os.getuid()
+            if os.path.exists(proxypath):
+                cert = proxypath
+        return cert
 
 try:
-    from http_client_requests import *
+    from http_client_requests import get_client
 except ImportError:
-    from http_client_old import *
+    from http_client_old import get_client
 
 from urllib import quote as escape_url_path
 

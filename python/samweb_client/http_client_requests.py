@@ -1,13 +1,10 @@
+# HTTP client using requests library
+
 import requests
 import time
 
 from samweb_client import Error, json
-from http_client import make_ssl_error, SAMWebHTTPError,  get_standard_certificate_path
-
-_cert = None
-
-maxtimeout=60*30
-maxretryinterval = 60
+from http_client import SAMWebHTTPClient, SAMWebConnectionError, SAMWebSSLError, SAMWebHTTPError
 
 def _request_wrapper(func):
     def wrapper(self, url, format=None, content_type=None, *args, **kwargs):
@@ -23,51 +20,55 @@ def _request_wrapper(func):
 
         self._make_session()
 
-        tmout = time.time() + maxtimeout
+        tmout = time.time() + self.maxtimeout
         retryinterval = 1
 
         while True:
             try:
                 response = func(self, url, *args, **kwargs)
-                response.raise_for_status() # convert errors into exceptions
                 return response
             except requests.exceptions.SSLError, ex:
                 msg = ex.message
-                if isinstance(self._cert, tuple): cert = self._cert[0]
-                else: cert = _cert
-                raise make_ssl_error(msg, cert)
+                raise self.make_ssl_error(msg)
             except requests.exceptions.HTTPError, ex:
-                raise SAMWebHTTPError(ex.response.request.method, url, ex.response.status_code, ex.response.text.rstrip())
+                exc = SAMWebHTTPError(ex.response.request.method, url, ex.response.status_code, ex.response.text.rstrip())
+                if 400 <= ex.response.status_code <= 500:
+                    # For any 400 error + 500 errors, don't bother retrying
+                    raise exc
             except requests.exceptions.Timeout, ex:
-                errmsg = "Timed out waiting for response from %s" % url
+                exc = SAMWebConnectionError("%s: Timed out waiting for response" % (url,))
             except requests.exceptions.ConnectionError, ex:
-                errmsg = str(ex)
+                exc = SAMWebConnectionError("%s: %s" % (url, str(ex)))
             
-            if time.time() > tmout:
-                raise Error("%s: %s" % (url, errmsg))
+            if time.time() >= tmout:
+                raise exc
                 
-            print '%s: %s: retrying in %d s' %( url, errmsg, retryinterval)
+            if self.verboseretries:
+                print '%s: retrying in %d s' %( str(exc), retryinterval)
             time.sleep(retryinterval)
             retryinterval*=2
-            if retryinterval > maxretryinterval:
-                retryinterval = maxretryinterval
+            if retryinterval > self.maxretryinterval:
+                retryinterval = self.maxretryinterval
 
     return wrapper
 
-def get_client():
-    return RequestsHTTPClient()
+def get_client(*args, **kwargs):
+    return RequestsHTTPClient(*args, **kwargs)
 
 import sys
 
-class RequestsHTTPClient(object):
+class RequestsHTTPClient(SAMWebHTTPClient):
 
-    def __init__(self):
+    def __init__(self, verbosehttprequests=False, *args, **kwargs):
+        SAMWebHTTPClient.__init__(self, *args, **kwargs)
         self._session = None
-        self._cert =None
+        self._config = {}
+        if verbosehttprequests:
+            self._config['verbose'] = sys.stderr
 
     def _make_session(self):
         if self._session is None:
-            self._session = requests.Session(verify=False, cert=self._cert, config={'verbose': sys.stderr})
+            self._session = requests.Session(verify=False, cert=self._cert, config=self._config)
 
     def use_client_certificate(self, cert=None, key=None):
         if cert:
@@ -76,7 +77,7 @@ class RequestsHTTPClient(object):
             else:
                 self._cert = cert
         else:
-            self._cert = get_standard_certificate_path()
+            self._cert = self.get_standard_certificate_path()
         self._session = None # This will clear any existing session with a different cert
 
     @_request_wrapper
@@ -87,3 +88,4 @@ class RequestsHTTPClient(object):
     def postURL(self, url, data=None, **kwargs):
         return self._session.post(url, data=data, **kwargs)
 
+__all__ = [ 'get_client' ]

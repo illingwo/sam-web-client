@@ -1,21 +1,17 @@
+# HTTP client using standard urllib2 implementation
 
 from urllib import urlencode, quote, quote_plus
 import urllib2,httplib
 from urllib2 import urlopen, URLError, HTTPError, Request
 
-import time, socket, os
+import time, socket, os, sys
 
 from samweb_client import Error, json
-from http_client import make_ssl_error, SAMWebSSLError, get_standard_certificate_path
+from http_client import SAMWebHTTPClient, SAMWebConnectionError, SAMWebSSLError, SAMWebHTTPError
 
 def get_client():
     # There is no local state, so just return the module
-    import sys
-    return sys.modules[__name__]
-
-
-maxtimeout=60*30
-maxretryinterval = 60
+    return URLLib2HTTPClient()
 
 class Response(object):
     """ Wrapper for the response object. Provides a text attribue that contains the body of the response.
@@ -91,70 +87,77 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
-def postURL(url, data=None, content_type=None, **kwargs):
-    return _doURL(url, action='POST', data=data, content_type=content_type, **kwargs)
+class URLLib2HTTPClient(SAMWebHTTPClient):
+    """ HTTP client using standard urllib2 implementation """
 
-def getURL(url, params=None,format=None, **kwargs):
-    return _doURL(url,action='GET',params=params,format=format, **kwargs)
+    def __init__(self, *args, **kwargs):
+        SAMWebHTTPClient.__init__(self, *args, **kwargs)
 
-def _doURL(url, action='GET', params=None, format=None, data=None, content_type=None, prefetch=True):
-    headers = {}
-    if format=='json':
-        headers['Accept'] = 'application/json'
+    def postURL(self, url, data=None, content_type=None, **kwargs):
+        return self._doURL(url, action='POST', data=data, content_type=content_type, **kwargs)
 
-    if action in ('POST', 'PUT'):
-        # these always require body data
-        if data is None:
-            data = ''
-    if isinstance(data, dict):
-        data = urlencode(data)
-    if params is not None:
-        if '?' not in url: url += '?'
-        else: url += '&'
-        url += urlencode(params)
-    tmout = time.time() + maxtimeout
-    retryinterval = 1
+    def getURL(self, url, params=None,format=None, **kwargs):
+        return self._doURL(url,action='GET',params=params,format=format, **kwargs)
 
-    request = Request(url, headers=headers)
-    if data:
-        request.add_data(data)
-    if content_type:
-        request.add_header('Content-Type', content_type)
-    while True:
-        try:
-            remote = urlopen(request)
-        except HTTPError, x:
-            #python 2.4 treats 201 and up as errors instead of normal return codes
-            if 201 <= x.code <= 299:
-                return Response(x)
-            errmsg = x.read().strip()
-            x.close() # ensure that the socket is closed (otherwise it may hang around in the traceback object)
-            # retry server errors (excluding internal errors)
-            if x.code > 500 and time.time() < tmout:
-                print "Error %s" % errmsg
-            else:
-                raise SAMWebHTTPError(action, url, x.code, errmsg)
-        except URLError, x:
-            if isinstance(x.reason, socket.sslerror):
-                raise make_ssl_error(str(x.reason), client_cert)
-            print 'URL %s not responding' % url
-        else:
-            return Response(remote, prefetch=prefetch)
+    def _doURL(self, url, action='GET', params=None, format=None, data=None, content_type=None, prefetch=True):
+        headers = {}
+        if format=='json':
+            headers['Accept'] = 'application/json'
 
-        time.sleep(retryinterval)
-        retryinterval*=2
-        if retryinterval > maxretryinterval:
-            retryinterval = maxretryinterval
+        if action in ('POST', 'PUT'):
+            # these always require body data
+            if data is None:
+                data = ''
+        if isinstance(data, dict):
+            data = urlencode(data)
+        if params is not None:
+            if '?' not in url: url += '?'
+            else: url += '&'
+            url += urlencode(params)
+        tmout = time.time() + self.maxtimeout
+        retryinterval = 1
 
-client_cert = None
-def use_client_certificate(cert=None, key=None):
-    """ Use the given certificate and key for client ssl authentication """
-    if not cert:
-        cert = key = get_standard_certificate_path()
-    if cert:
-        opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
-        urllib2.install_opener(opener)
-        global client_cert
-        client_cert = cert
+        request = Request(url, headers=headers)
+        if data:
+            request.add_data(data)
+        if content_type:
+            request.add_header('Content-Type', content_type)
+        while True:
+            try:
+                return Response(urlopen(request), prefetch=prefetch)
+            except HTTPError, x:
+                #python 2.4 treats 201 and up as errors instead of normal return codes
+                if 201 <= x.code <= 299:
+                    return Response(x)
+                errmsg = x.read().rstrip()
+                x.close() # ensure that the socket is closed (otherwise it may hang around in the traceback object)
+                # retry server errors (excluding internal errors)
+                if x.code > 500 and time.time() < tmout:
+                    pass
+                else:
+                    raise SAMWebHTTPError(action, url, x.code, errmsg)
+            except URLError, x:
+                if isinstance(x.reason, socket.sslerror):
+                    raise self.make_ssl_error(str(x.reason))
+                else:
+                    errmsg = str(x.reason)
+                if time.time() >= tmout:
+                    raise ConnectionError(errmsg)
 
-__all__ = ['postURL', 'getURL', 'use_client_certificate', 'get_client' ]
+            if self.verboseretries:
+                print>>sys.stderr, '%s: %s: retrying in %d s' %( url, errmsg, retryinterval)
+            time.sleep(retryinterval)
+            retryinterval*=2
+            if retryinterval > self.maxretryinterval:
+                retryinterval = self.maxretryinterval
+
+    def use_client_certificate(self, cert=None, key=None):
+        """ Use the given certificate and key for client ssl authentication """
+        if not cert:
+            cert = key = self.get_standard_certificate_path()
+        if cert:
+            opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
+            urllib2.install_opener(opener)
+            self._cert = cert
+
+__all__ = [ 'get_client' ]
