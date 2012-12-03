@@ -203,9 +203,8 @@ class startProjectCmd(CmdBase):
         try:
             project = args[0]
         except IndexError:
-            now = time.strftime("%Y%m%d%H%M%S")
-            project = "%s_%s_%s" % ( os.environ["USER"],defname, now)
-        rval = self.samweb.makeProject(defname, project, station=options.station, group=options.group)
+            project = self.samweb.makeProjectName(defname)
+        rval = self.samweb.startProject(defname, project, station=options.station, group=options.group)
         print rval["projectURL"]
 
 class ProjectCmdBase(CmdBase):
@@ -272,7 +271,7 @@ class startProcessCmd(CmdBase):
         if options.max_files:
             kwargs['maxFiles'] = options.max_files
 
-        rval = self.samweb.makeProcess(projecturl, options.appfamily, options.appname, 
+        rval = self.samweb.startProcess(projecturl, options.appfamily, options.appname,
                 options.appversion, **kwargs)
         if options.url:
             print '%s/process/%s' % (projecturl, rval)

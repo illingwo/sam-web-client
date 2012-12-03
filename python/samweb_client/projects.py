@@ -3,7 +3,15 @@ from samweb_client.client import samweb_method
 from exceptions import *
 
 @samweb_method
-def makeProject(samweb, defname, project, station=None, user=None, group=None):
+def makeProjectName(samweb, description):
+    """ Make a suitable project name from the provided string """
+    description = description.replace(' ','_')
+    import time
+    now = time.strftime("%Y%m%d%H%M%S")
+    return "%s_%s_%s" % ( samweb.user ,description, now)
+
+@samweb_method
+def startProject(samweb, defname, project, station=None, user=None, group=None):
     if not station: station = samweb.get_station()
     if not user: user = samweb.user
     if not group: group = samweb.group
@@ -20,7 +28,7 @@ def findProject(samweb, project, station=None):
     return result.text.strip()
 
 @samweb_method
-def makeProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
+def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
     if not deliveryLocation:
         import socket
         deliveryLocation = socket.getfqdn()
@@ -69,32 +77,4 @@ def stopProject(samweb, projecturl):
 def projectSummary(samweb, projecturl):
     return samweb.getURL(projecturl + "/summary").text.rstrip()
 
-"""
 
-Example of running a project
-
-def runProject():
-  projectinfo =  makeProject("test2056")
-  projecturl = projectinfo["projectURL"]
-  print "Project name is %s" % projectinfo["project"]
-  print "Project URL is %s" % projecturl
-
-  cpid = makeProcess(projecturl)
-  print "Consumer process id %s" %cpid
-  processurl = projecturl + '/process/%s' % cpid
-
-  while True:
-
-    try:
-      newfile = getNextFile(processurl)
-      print "Got file %s" % newfile
-    except NoMoreFiles:
-      print "No more files available"
-      break
-
-    releaseFile(processurl, newfile)
-    print "Released file %s" % newfile
-
-  stopProject(projecturl)
-  print "Project ended"
-"""
