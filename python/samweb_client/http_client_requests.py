@@ -16,7 +16,7 @@ def _request_wrapper(func):
             headers['Content-Type'] = content_type
         
         if headers:
-            kwargs['headers'] = headers
+            kwargs.setdefault('headers',{}).update(headers)
 
         self._make_session()
 
@@ -26,15 +26,17 @@ def _request_wrapper(func):
         while True:
             try:
                 response = func(self, url, *args, **kwargs)
-                return response
+                if 200 <= response.status_code < 300:
+                    return response
+                else:
+                    # something went wrong
+                    exc = SAMWebHTTPError(response.request.method, url, response.status_code, response.text.rstrip())
+                    if 400 <= response.status_code <= 500:
+                        # For any 400 error + 500 errors, don't bother retrying
+                        raise exc
             except requests.exceptions.SSLError, ex:
                 msg = ex.message
                 raise self.make_ssl_error(msg)
-            except requests.exceptions.HTTPError, ex:
-                exc = SAMWebHTTPError(ex.response.request.method, url, ex.response.status_code, ex.response.text.rstrip())
-                if 400 <= ex.response.status_code <= 500:
-                    # For any 400 error + 500 errors, don't bother retrying
-                    raise exc
             except requests.exceptions.Timeout, ex:
                 exc = SAMWebConnectionError("%s: Timed out waiting for response" % (url,))
             except requests.exceptions.ConnectionError, ex:
@@ -86,6 +88,12 @@ class RequestsHTTPClient(SAMWebHTTPClient):
 
     @_request_wrapper
     def postURL(self, url, data=None, **kwargs):
+        # httplib isn't sending a Content-Length: 0 header for empty bodies
+        # even though the latest HTTP revision says this is legal, cherrypy and
+        # some other servers don't like it
+        # this may be fixed in python 2.7.4
+        if not data:
+            kwargs.setdefault('headers',{})['Content-Length'] = '0'
         return self._session.post(url, data=data, **kwargs)
 
 __all__ = [ 'get_client' ]
