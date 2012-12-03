@@ -23,7 +23,6 @@ def startProject(samweb, defname, project, station=None, user=None, group=None):
 def findProject(samweb, project, station=None):
     args = {'name':project}
     if station: args['station'] = station
-    else: args['station'] = samweb.get_station()
     result = samweb.getURL('/findProject', args)
     return result.text.strip()
 
@@ -42,6 +41,13 @@ def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLoc
         args["filelimit"] = maxFiles
     result = samweb.postURL(projecturl + '/establishProcess', args)
     return result.text.strip()
+
+@samweb_method
+def makeProcessUrl(samweb, projecturl, processid):
+    """ Make the process url from a project url and process id """
+    if not '://' in projecturl:
+        projecturl = samweb.findProject(projecturl)
+    return projecturl + '/process/' + str(processid)
 
 @samweb_method
 def getNextFile(samweb, processurl):

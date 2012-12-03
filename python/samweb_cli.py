@@ -274,7 +274,7 @@ class startProcessCmd(CmdBase):
         rval = self.samweb.startProcess(projecturl, options.appfamily, options.appname,
                 options.appversion, **kwargs)
         if options.url:
-            print '%s/process/%s' % (projecturl, rval)
+            print self.samweb.makeProcessUrl(projecturl, rval)
         else:
             print rval
 
@@ -289,9 +289,7 @@ class ProcessCmd(CmdBase):
                 processurl = args.pop(0)
             elif len(args) >= 2:
                 projecturl = args.pop(0)
-                if not '://' in projecturl:
-                    projecturl = self.samweb.findProject(projecturl)
-                processurl = projecturl + '/process/%s' % args.pop(0)
+                self.samweb.makeProcessUrl(projecturl, rval)
         except IndexError:
             processurl = None
         if not processurl:
