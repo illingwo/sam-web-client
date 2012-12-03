@@ -118,7 +118,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         retryinterval = 1
 
         request = Request(url, headers=headers)
-        if data:
+        if data is not None:
             request.add_data(data)
         if content_type:
             request.add_header('Content-Type', content_type)

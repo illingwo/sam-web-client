@@ -269,7 +269,7 @@ class startProcessCmd(CmdBase):
             projecturl = self.samweb.findProject(projecturl)
 
         kwargs = { "deliveryLocation":options.delivery_location }
-        if options.maxfiles:
+        if options.max_files:
             kwargs['maxFiles'] = options.max_files
 
         rval = self.samweb.makeProcess(projecturl, options.appfamily, options.appname, 
@@ -285,13 +285,16 @@ class ProcessCmd(CmdBase):
 
     def makeProcessUrl(self, args):
         # note that this modifies args
-        if len(args) == 1:
-            processurl = args.pop(0)
-        elif len(args) >= 2:
-            projecturl = args.pop(0)
-            if not '://' in projecturl:
-                projecturl = self.samweb.findProject(projecturl)
-            processurl = projecturl + '/process/%s' % args.pop(0)
+        try:
+            if len(args) == 1:
+                processurl = args.pop(0)
+            elif len(args) >= 2:
+                projecturl = args.pop(0)
+                if not '://' in projecturl:
+                    projecturl = self.samweb.findProject(projecturl)
+                processurl = projecturl + '/process/%s' % args.pop(0)
+        except IndexError:
+            processurl = None
         if not processurl:
             raise CmdError("Must specify either process url or project url and process id")
         return processurl
@@ -314,10 +317,13 @@ class releaseFileCmd(ProcessCmd):
     options = [ "status=" ]
 
     def run(self, options, args):
+        try:
+            filename = args.pop()
+        except IndexError:
+            raise CmdError("No project and file name arguments")
         processurl = self.makeProcessUrl(args)
-        if len(args) != 1:
-            raise CmdError("Must specify filename")
-        filename = args[0]
+        #if len(args) != 1:
+        #    raise CmdError("Must specify filename")
         status = options.status
         if not status: status = 'ok'
         self.samweb.releaseFile(processurl, filename)

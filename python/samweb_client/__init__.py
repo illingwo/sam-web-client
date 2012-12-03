@@ -11,9 +11,7 @@ except ImportError:
     except ImportError:
         import simplejson_209 as json
 
-
-class Error(Exception):
-  pass
+from exceptions import *
 
 import http_client
 from client import SAMWebClient 

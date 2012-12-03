@@ -1,14 +1,12 @@
 
 from samweb_client.client import samweb_method
-
-class NoMoreFiles(Exception):
-  pass
+from exceptions import *
 
 @samweb_method
 def makeProject(samweb, defname, project, station=None, user=None, group=None):
-    if not station: station = getstation()
-    if not user: user = samweb_connect.user
-    if not group: group = samweb_connect.group
+    if not station: station = samweb.get_station()
+    if not user: user = samweb.user
+    if not group: group = samweb.group
     args = {'name':project,'station':station,"defname":defname,"username":user,"group":group}
     result = samweb.postURL('/startProject', args)
     return {'project':project,'dataset':defname,'projectURL':result.text.strip()}
@@ -17,16 +15,17 @@ def makeProject(samweb, defname, project, station=None, user=None, group=None):
 def findProject(samweb, project, station=None):
     args = {'name':project}
     if station: args['station'] = station
-    else: args['station'] = samweb_connect.station
+    else: args['station'] = samweb.get_station()
     result = samweb.getURL('/findProject', args)
     return result.text.strip()
 
 @samweb_method
 def makeProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
     if not deliveryLocation:
+        import socket
         deliveryLocation = socket.getfqdn()
     if not user:
-        user = samweb_connect.user
+        user = samweb.user
 
     args = { "appname":appname, "appversion":appversion, "deliverylocation" : deliveryLocation, "username":user }
     if appfamily:
@@ -40,7 +39,7 @@ def makeProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLoca
 def getNextFile(samweb, processurl):
     url = processurl + '/getNextFile'
     while True:
-        result= samweb.postURL(url, {})
+        result= samweb.postURL(url, data={})
         code = result.status_code
         data = result.text.strip()
         if code == 202:

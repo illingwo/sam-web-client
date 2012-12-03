@@ -1,5 +1,5 @@
 
-from samweb_client import Error
+from samweb_client.exceptions import Error
 
 class SAMWebConnectionError(Error):
     pass
