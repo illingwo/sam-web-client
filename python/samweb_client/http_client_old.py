@@ -7,7 +7,7 @@ from urllib2 import urlopen, URLError, HTTPError, Request
 import time, socket, os, sys
 
 from samweb_client import Error, json
-from http_client import SAMWebHTTPClient, SAMWebConnectionError, SAMWebSSLError, SAMWebHTTPError
+from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, SAMWebHTTPError
 
 def get_client():
     # There is no local state, so just return the module
@@ -96,13 +96,14 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
     def postURL(self, url, data=None, content_type=None, **kwargs):
         return self._doURL(url, action='POST', data=data, content_type=content_type, **kwargs)
 
-    def getURL(self, url, params=None,format=None, **kwargs):
-        return self._doURL(url,action='GET',params=params,format=format, **kwargs)
+    def getURL(self, url, params=None, **kwargs):
+        return self._doURL(url,action='GET',params=params, **kwargs)
 
-    def _doURL(self, url, action='GET', params=None, format=None, data=None, content_type=None, prefetch=True):
-        headers = {}
-        if format=='json':
-            headers['Accept'] = 'application/json'
+    def _doURL(self, url, action='GET', params=None, data=None, content_type=None, prefetch=True, headers=None):
+        if headers is None:
+            headers = {}
+
+        headers['Accept'] = 'application/json'
 
         if action in ('POST', 'PUT'):
             # these always require body data
@@ -129,13 +130,19 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                 #python 2.4 treats 201 and up as errors instead of normal return codes
                 if 201 <= x.code <= 299:
                     return Response(x)
-                errmsg = x.read().rstrip()
+                if x.headers.get('Content-Type') == 'application/json':
+                    err = json.load(x)
+                    errmsg = err['message']
+                    errtype = err['error']
+                else:
+                    errmsg = x.read().rstrip()
+                    errtype = x.msg
                 x.close() # ensure that the socket is closed (otherwise it may hang around in the traceback object)
                 # retry server errors (excluding internal errors)
                 if x.code > 500 and time.time() < tmout:
                     pass
                 else:
-                    raise SAMWebHTTPError(action, url, x.code, errmsg)
+                    raise makeHTTPError(action, url, x.code, errmsg, errtype)
             except URLError, x:
                 if isinstance(x.reason, socket.sslerror):
                     raise self.make_ssl_error(str(x.reason))

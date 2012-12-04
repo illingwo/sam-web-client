@@ -4,19 +4,18 @@ import requests
 import time
 
 from samweb_client import Error, json
-from http_client import SAMWebHTTPClient, SAMWebConnectionError, SAMWebSSLError, SAMWebHTTPError
+from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, SAMWebHTTPError
 
 def _request_wrapper(func):
-    def wrapper(self, url, format=None, content_type=None, *args, **kwargs):
-        headers = {}
-        if format=='json':
-            headers['Accept'] = 'application/json'
+    def wrapper(self, url, content_type=None, *args, **kwargs):
+        headers = { 'Accept': 'application/json' }
+        if 'headers' in kwargs:
+            headers.update(kwargs['headers'])
 
         if content_type is not None:
             headers['Content-Type'] = content_type
         
-        if headers:
-            kwargs.setdefault('headers',{}).update(headers)
+        kwargs['headers'] = headers
 
         self._make_session()
 
@@ -30,7 +29,14 @@ def _request_wrapper(func):
                     return response
                 else:
                     # something went wrong
-                    exc = SAMWebHTTPError(response.request.method, url, response.status_code, response.text.rstrip())
+                    jsonerr = response.json
+                    if jsonerr is None:
+                        errmsg = response.text.rstrip()
+                        errtype =  response.reason
+                    else:
+                        errmsg = jsonerr['message']
+                        errtype = jsonerr['error']
+                    exc = makeHTTPError(response.request.method, url, response.status_code, errmsg, errtype)
                     if 400 <= response.status_code <= 500:
                         # For any 400 error + 500 errors, don't bother retrying
                         raise exc

@@ -59,7 +59,7 @@ class locateFileCmd(CmdBase):
         if len(args) != 1:
             raise CmdError("No filename specified")
         filename = args[0]
-        print '\n'.join( l['full_path'] for l in self.samweb.locateFile(filename))
+        print '\n'.join( l.get('location') or l['full_path'] for l in self.samweb.locateFile(filename))
 
 class getMetadataCmd(CmdBase):
     name = 'get-metadata'

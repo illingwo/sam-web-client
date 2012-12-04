@@ -19,25 +19,33 @@ def listFiles(samweb, dimensions=None, defname=None):
 
     # This can return a potentially long list, so don't preload the result
     # instead return a generator which reads it progressively
+    params = {'format':'plain'}
+    kwargs = { 'params' : params, 'prefetch':False }
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/list' % defname, prefetch=False)
+        result = samweb.getURL('/definitions/name/%s/files/list' % defname, **kwargs)
     else:
         if len(dimensions) > 1024:
+            kwargs['data'] = {'dims':dimensions}
             method = samweb.postURL
         else:
+            params['dims'] = dimensions
             method = samweb.getURL
-        result = method('/files/list', {'dims':dimensions}, prefetch=False)
+        result = method('/files/list', **kwargs)
 
     return ifilter( None, (l.strip() for l in result.iter_lines()) )
 
 @samweb_method
 def parseDims(samweb, dimensions):
     """ For debugging only """
+    params = { "parse_only": "1"}
+    kwargs = {'params' : params }
     if len(dimensions) > 1024:
+        kwargs['data'] = {'dims':dimensions}
         method = samweb.postURL
     else:
+        params.update({'dims':dimensions})
         method = samweb.getURL
-    result = method('/files/list', {'dims':dimensions, "parse_only": "1"})
+    result = method('/files/list', **kwargs)
     return result.text.rstrip()
 
 @samweb_method
@@ -49,7 +57,15 @@ def countFiles(samweb, dimensions=None, defname=None):
     if defname is not None:
         result = samweb.getURL('/definitions/name/%s/files/count' % defname)
     else:
-        result = samweb.getURL('/files/count', {'dims':dimensions})
+        params = {}
+        kwargs = {'params' : params }
+        if len(dimensions) > 1024:
+            kwargs['data'] = {'dims':dimensions}
+            method = samweb.postURL
+        else:
+            params.update({'dims':dimensions})
+            method = samweb.getURL
+        result = samweb.getURL('/files/count', **kwargs)
     return long(result.text.strip())
 
 def _make_file_path(filenameorid):
@@ -67,7 +83,7 @@ def locateFile(samweb, filenameorid):
         name or id of file
     """
     url = _make_file_path(filenameorid) + '/locations'
-    result = samweb.getURL(url, format='json')
+    result = samweb.getURL(url)
     return result.json
 
 @samweb_method
@@ -76,7 +92,7 @@ def getMetadata(samweb, filenameorid):
     arguments:
         name or id of file
     """
-    response = samweb.getURL(_make_file_path(filenameorid) + '/metadata', format='json')
+    response = samweb.getURL(_make_file_path(filenameorid) + '/metadata')
     return response.json
 
 @samweb_method
@@ -85,7 +101,8 @@ def getMetadataText(samweb, filenameorid, format=None):
     arguments:
         name or id of file
     """
-    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', format=format)
+    if format is None: format='plain'
+    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params={'format':format})
     return result.text.rstrip()
 
 @samweb_method
@@ -116,7 +133,9 @@ def listDefinitions(samweb, **queryCriteria):
     arguments:
         one or more key=string value pairs to pass to server
     """
-    result = samweb.getURL('/definitions/list', queryCriteria, prefetch=False)
+    params = dict(queryCriteria)
+    params['format'] = 'plain'
+    result = samweb.getURL('/definitions/list', params, prefetch=False)
     return ifilter( None, (l.strip() for l in result.iter_lines()) )
 
 def _descDefinitionURL(defname):
@@ -128,8 +147,8 @@ def descDefinitionDict(samweb, defname):
     arguments:
         definition name
     """
-    result = self.getURL(_descDefinitionURL(defname), format='json')
-    return result.text
+    result = self.getURL(_descDefinitionURL(defname))
+    return result.json
 
 @samweb_method
 def descDefinition(samweb, defname):
@@ -137,7 +156,7 @@ def descDefinition(samweb, defname):
     arguments:
         definition name
     """
-    result = samweb.getURL(_descDefinitionURL(defname))
+    result = samweb.getURL(_descDefinitionURL(defname), {'format':'plain'})
     return result.text.rstrip()
 
 @samweb_method
