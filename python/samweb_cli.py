@@ -87,9 +87,9 @@ class fileLineage(CmdBase):
         def _printLineage(results, indent=0):
             for r in results:
                 if isinstance(r, list):
-                    _printResults(r, indent+2)
+                    _printLineage(r, indent+4)
                 else:
-                    print r['file_name']
+                    print '%s%s' % (' '*indent, r['file_name'])
         _printLineage(self.samweb.getFileLineage(args[0], args[1]))
 
 class declareFileCmd(CmdBase):
