@@ -78,7 +78,7 @@ class getMetadataCmd(CmdBase):
 class fileLineage(CmdBase):
     name = 'file-lineage'
     description = 'Get lineage for a file'
-    args = '<parents|children|rawancestors> <file name>'
+    args = '<parents|children|ancestors|descendants|rawancestors> <file name>'
     cmdgroup = 'datafiles'
 
     def run(self, options, args):
