@@ -75,6 +75,23 @@ class getMetadataCmd(CmdBase):
             raise CmdError("Invalid or no argument specified")
         print self.samweb.getMetadataText(args[0],format=options.format)
 
+class fileLineage(CmdBase):
+    name = 'file-lineage'
+    description = 'Get lineage for a file'
+    args = '<parents|children|rawancestors> <file name>'
+    cmdgroup = 'datafiles'
+
+    def run(self, options, args):
+        if len(args) != 2:
+            raise CmdError("Invalid or no argument specified")
+        def _printLineage(results, indent=0):
+            for r in results:
+                if isinstance(r, list):
+                    _printResults(r, indent+2)
+                else:
+                    print r['file_name']
+        _printLineage(self.samweb.getFileLineage(args[0], args[1]))
+
 class declareFileCmd(CmdBase):
     name = 'declare-file'
     description = "Declare a new file into the database"

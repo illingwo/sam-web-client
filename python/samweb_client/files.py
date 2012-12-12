@@ -106,6 +106,16 @@ def getMetadataText(samweb, filenameorid, format=None):
     return result.text.rstrip()
 
 @samweb_method
+def getFileLineage(samweb, lineagetype, filenameorid):
+    """ Return lineage information for a file
+    arguments:
+        lineagetype (ie "parents", "children")
+        name or id of file
+    """
+    result = samweb.getURL(_make_file_path(filenameorid) + '/lineage/' + escape_url_path(lineagetype))
+    return result.json
+
+@samweb_method
 def declareFile(samweb, md=None, mdfile=None):
     """ Declare a new file
     arguments:
