@@ -1,12 +1,12 @@
 
-from samweb_client import json, Error
+from samweb_client import json, convert_from_unicode, Error
 from samweb_client.client import samweb_method
 from samweb_client.http_client import escape_url_path
 
 @samweb_method
 def listApplications(samweb, **queryCriteria):
-    result = samweb.getURL('/values/applications', queryCriteria, format='json')
-    return json.load(result)
+    result = samweb.getURL('/values/applications', queryCriteria)
+    return convert_from_unicode(result.json)
 
 @samweb_method
 def addApplication(samweb, family, name, version):
@@ -14,21 +14,24 @@ def addApplication(samweb, family, name, version):
 
 @samweb_method
 def listUsers(samweb):
-    result = samweb.getURL('/users', format='json')
-    return result.json
+    result = samweb.getURL('/users')
+    return convert_from_unicode(result.json)
 
 @samweb_method
 def _describeUser(samweb, username, format=None):
-    return samweb.getURL('/users/name/%s' % escape_url_path(username), format=format)
+    params = {}
+    if format:
+        params['format'] = format
+    return samweb.getURL('/users/name/%s' % escape_url_path(username), params)
 
 @samweb_method
 def describeUser(samweb, username):
-    result = samweb._describeUser(username, format='json')
-    return result.json
+    result = samweb._describeUser(username)
+    return convert_from_unicode(result.json)
 
 @samweb_method
 def describeUserText(samweb, username):
-    result = samweb._describeUser(username)
+    result = samweb._describeUser(username, format='plain')
     return result.text.rstrip()
 
 @samweb_method
