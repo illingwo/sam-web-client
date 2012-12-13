@@ -11,6 +11,18 @@ except ImportError:
     except ImportError:
         import simplejson_209 as json
 
+def convert_from_unicode(input):
+    """ convert an object structure (specifically those returned via json
+    to use plain strings insead of unicode """
+    if isinstance(input, dict):
+        return type(input)( (convert_from_unicode(key), convert_from_unicode(value)) for key, value in input.iteritems())
+    elif isinstance(input, list):
+        return [convert_from_unicode(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode('utf-8')
+    else:
+        return input
+
 from exceptions import *
 
 import http_client

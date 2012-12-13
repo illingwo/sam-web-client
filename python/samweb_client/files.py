@@ -1,5 +1,5 @@
 
-from samweb_client import json
+from samweb_client import json, convert_from_unicode
 from samweb_client.client import samweb_method
 from samweb_client.http_client import escape_url_path
 
@@ -84,7 +84,7 @@ def locateFile(samweb, filenameorid):
     """
     url = _make_file_path(filenameorid) + '/locations'
     result = samweb.getURL(url)
-    return result.json
+    return convert_from_unicode(result.json)
 
 @samweb_method
 def addFileLocation(samweb, filenameorid, location):
@@ -115,7 +115,7 @@ def getMetadata(samweb, filenameorid):
         name or id of file
     """
     response = samweb.getURL(_make_file_path(filenameorid) + '/metadata')
-    return response.json
+    return convert_from_unicode(response.json)
 
 @samweb_method
 def getMetadataText(samweb, filenameorid, format=None):
@@ -135,7 +135,7 @@ def getFileLineage(samweb, lineagetype, filenameorid):
         name or id of file
     """
     result = samweb.getURL(_make_file_path(filenameorid) + '/lineage/' + escape_url_path(lineagetype))
-    return result.json
+    return convert_from_unicode(result.json)
 
 @samweb_method
 def declareFile(samweb, md=None, mdfile=None):
@@ -180,7 +180,7 @@ def descDefinitionDict(samweb, defname):
         definition name
     """
     result = self.getURL(_descDefinitionURL(defname))
-    return result.json
+    return convert_from_unicode(result.json)
 
 @samweb_method
 def descDefinition(samweb, defname):
