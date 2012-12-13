@@ -87,6 +87,28 @@ def locateFile(samweb, filenameorid):
     return result.json
 
 @samweb_method
+def addFileLocation(samweb, filenameorid, location):
+    """ Add a location for a file
+    arguments:
+        name or id of file
+        location
+    """
+    url = _make_file_path(filenameorid) + '/locations'
+    data = { "add" : location }
+    return samweb.postURL(url, data=data, secure=True)
+
+@samweb_method
+def removeFileLocation(samweb, filenameorid, location):
+    """ Remove a location for a file
+    arguments:
+        name or id of file
+        location
+    """
+    url = _make_file_path(filenameorid) + '/locations'
+    data = { "remove" : location }
+    return samweb.postURL(url, data=data, secure=True)
+
+@samweb_method
 def getMetadata(samweb, filenameorid):
     """ Return metadata as a dictionary 
     arguments:

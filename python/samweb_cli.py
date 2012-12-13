@@ -59,7 +59,28 @@ class locateFileCmd(CmdBase):
         if len(args) != 1:
             raise CmdError("No filename specified")
         filename = args[0]
-        print '\n'.join( l.get('location') or l['full_path'] for l in self.samweb.locateFile(filename))
+        for loc in ( l.get('location') or l['full_path'] for l in self.samweb.locateFile(filename)):
+            print loc
+
+class addFileLocationCmd(CmdBase):
+    name='add-file-location'
+    description="add a location for a file"
+    args = "<file_name> <location>"
+    cmdgroup = 'datafiles'
+    def run(self, options, args):
+        if len(args) != 2:
+            raise CmdError("Incorrect arguments")
+        self.samweb.addFileLocation(args[0],args[1])
+
+class removeFileLocationCmd(CmdBase):
+    name='remove-file-location'
+    description="remove a location for a file"
+    args = "<file_name> <location>"
+    cmdgroup = 'datafiles'
+    def run(self, options, args):
+        if len(args) != 2:
+            raise CmdError("Incorrect arguments")
+        self.samweb.removeFileLocation(args[0],args[1])
 
 class getMetadataCmd(CmdBase):
     name = 'get-metadata'
