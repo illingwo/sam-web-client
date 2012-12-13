@@ -19,7 +19,11 @@ def convert_from_unicode(input):
     elif isinstance(input, list):
         return [convert_from_unicode(element) for element in input]
     elif isinstance(input, unicode):
-        return input.encode('utf-8')
+        try:
+            return input.encode('ascii')
+        except UnicodeEncodeError:
+            # can't be represented as ascii; leave it as unicode
+            return input
     else:
         return input
 
