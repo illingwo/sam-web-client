@@ -94,7 +94,7 @@ class SAMWebClient(object):
     def get_verbose(self):
         return self.http_client.verbose
     def set_verbose(self, verbose):
-        self.http_client.verbose = True
+        self.http_client.verbose = verbose
 
     verbose = property(get_verbose, set_verbose)
 
