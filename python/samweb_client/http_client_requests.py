@@ -67,12 +67,21 @@ import sys
 
 class RequestsHTTPClient(SAMWebHTTPClient):
 
-    def __init__(self, verbosehttprequests=False, *args, **kwargs):
+    def __init__(self, verbose=False, *args, **kwargs):
         SAMWebHTTPClient.__init__(self, *args, **kwargs)
         self._session = None
         self._config = {}
-        if verbosehttprequests:
-            self._config['verbose'] = sys.stderr
+        if verbose: self.verbose = True
+
+    @property
+    def verbose(self): return bool(self._config.get('verbose'))
+    @verbose.setter
+    def verbose(self, verbose):
+        if verbose: self._config['verbose'] = sys.stderr
+        else:
+            try:
+                del self._config['verbose']
+            except KeyError: pass
 
     def _make_session(self):
         if self._session is None:

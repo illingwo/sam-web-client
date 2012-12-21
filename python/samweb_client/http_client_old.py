@@ -5,6 +5,7 @@ import urllib2,httplib
 from urllib2 import urlopen, URLError, HTTPError, Request
 
 import time, socket, os, sys
+from datetime import datetime
 
 from samweb_client import Error, json
 from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, SAMWebHTTPError
@@ -125,6 +126,8 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
             request.add_header('Content-Type', content_type)
         while True:
             try:
+                if self.verbose:
+                    sys.stderr.write("%s   %s   %s\n" % (datetime.now().isoformat(), action, url))
                 return Response(urlopen(request), prefetch=prefetch)
             except HTTPError, x:
                 #python 2.4 treats 201 and up as errors instead of normal return codes

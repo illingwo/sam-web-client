@@ -29,15 +29,18 @@ class SAMWebHTTPError(Error):
 class SAMWebHTTPClient(object):
     maxtimeout=60*30 # default max timeout
     maxretryinterval = 60 # default max retry interval
+    verbose = False # Full verbose mode
     verboseretries = True # whether to print output when retrying
 
-    def __init__(self, maxtimeout=None, maxretryinterval=None, verboseretries=None, *args, **kwargs):
+    def __init__(self, maxtimeout=None, maxretryinterval=None, verbose=None, verboseretries=None, *args, **kwargs):
         if maxtimeout is not None:
             self.maxtimeout = maxtimeout
         if maxretryinterval is not None:
             self.maxretryinterval = maxretryinterval
         if verboseretries is not None:
             self.verboseretries = verboseretries
+        if verbose is not None:
+            self.verbose = verbose
 
     def make_ssl_error(self, msg):
         """ Try to make sense of ssl errors and return a suitable exception object """

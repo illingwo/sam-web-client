@@ -91,6 +91,13 @@ class SAMWebClient(object):
         url = self._prepareURL(url, secure)
         return self.http_client.postURL(url, data=data, *args, **kwargs)
 
+    def get_verbose(self):
+        return self.http_client.verbose
+    def set_verbose(self, verbose):
+        self.http_client.verbose = True
+
+    verbose = property(get_verbose, set_verbose)
+
 def samweb_method(m):
     """ Attach this function as a method of the SAMWebClient class """
     setattr(SAMWebClient, m.func_name, m)

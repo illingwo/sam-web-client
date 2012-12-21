@@ -495,6 +495,7 @@ def main():
     base_options.add_option('-s','--secure', action="store_true", dest='secure', default=False, help='always use secure (SSL) mode')
     base_options.add_option('--cert', dest='cert', help='x509 certificate for authentication. If not specified, use $X509_USER_CERT or standard grid proxy location')
     base_options.add_option('--key', dest='key', help='x509 key for authentication (defaults to same as certificate)')
+    base_options.add_option('-v','--verbose', action="store_true", dest='verbose', default=False, help="Verbose mode")
     parser.add_option_group(base_options)
 
     (options, args) = parser.parse_args(sys.argv[1:])
@@ -562,6 +563,9 @@ def main():
 
     if options.devel or cmdoptions.devel:
         samweb.devel = True
+
+    # verbose mode
+    samweb.verbose = (options.verbose or cmdoptions.verbose)
 
     try:
         return command.run(cmdoptions, args)
