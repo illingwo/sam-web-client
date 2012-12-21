@@ -348,6 +348,7 @@ class getNextFileCmd(ProcessCmd):
 class releaseFileCmd(ProcessCmd):
     name = "release-file"
     description = "Release a file from a process"
+    args = "(<process url> | <project url> <process id>) <file name>"
     options = [ "status=" ]
 
     def run(self, options, args):
