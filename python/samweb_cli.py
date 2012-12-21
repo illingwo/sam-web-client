@@ -324,16 +324,14 @@ class ProcessCmd(CmdBase):
     def makeProcessUrl(self, args):
         # note that this modifies args
         try:
-            if len(args) == 1:
-                processurl = args.pop(0)
-            elif len(args) >= 2:
-                projecturl = args.pop(0)
-                self.samweb.makeProcessUrl(projecturl, rval)
-        except IndexError:
-            processurl = None
-        if not processurl:
+            url = args.pop(0)
+            if args:
+                processid = args.pop(0)
+                url = self.samweb.makeProcessUrl(url, processid)
+        except IndexError: url = None
+        if not url:
             raise CmdError("Must specify either process url or project url and process id")
-        return processurl
+        return url
     
 class getNextFileCmd(ProcessCmd):
     name = "get-next-file"
