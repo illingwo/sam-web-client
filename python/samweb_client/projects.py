@@ -1,4 +1,5 @@
 
+from samweb_client import json, convert_from_unicode
 from samweb_client.client import samweb_method
 from exceptions import *
 
@@ -81,6 +82,9 @@ def stopProject(samweb, projecturl):
 
 @samweb_method
 def projectSummary(samweb, projecturl):
-    return samweb.getURL(projecturl + "/summary").text.rstrip()
+    return convert_from_unicode(samweb.getURL(projecturl + "/summary").json)
 
+@samweb_method
+def projectSummaryText(samweb, projecturl):
+    return samweb.getURL(projecturl + "/summary", params=dict(format='plain')).text.rstrip()
 

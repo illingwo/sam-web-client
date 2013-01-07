@@ -26,11 +26,26 @@ class SAMWebHTTPError(Error):
         else:
             return "HTTP error: %(code)d %(msg)s\nURL: %(url)s" % self.__dict__
 
+def _get_from():
+    import os,pwd,socket
+    username = os.environ.get('USER')
+    if not username:
+        try:
+            username = pwd.getpwuid(os.getuid()).pw_name
+        except:
+            username = '<unknown>'
+    try:
+        return '%s@%s' % (username, socket.getfqdn())
+    except:
+        return username
+
 class SAMWebHTTPClient(object):
     maxtimeout=60*30 # default max timeout
     maxretryinterval = 60 # default max retry interval
     verbose = False # Full verbose mode
     verboseretries = True # whether to print output when retrying
+
+    _default_headers = { 'Accept' : 'application/json', 'From' : _get_from() }
 
     def __init__(self, maxtimeout=None, maxretryinterval=None, verbose=None, verboseretries=None, *args, **kwargs):
         if maxtimeout is not None:
@@ -62,6 +77,10 @@ class SAMWebHTTPClient(object):
             if os.path.exists(proxypath):
                 cert = proxypath
         return cert
+
+    def get_default_headers(self):
+        #return a copy as the user may modify it
+        return dict(self._default_headers)
 
 try:
     from http_client_requests import get_client

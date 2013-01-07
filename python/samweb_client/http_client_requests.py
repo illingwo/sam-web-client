@@ -8,7 +8,7 @@ from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, 
 
 def _request_wrapper(func):
     def wrapper(self, url, content_type=None, *args, **kwargs):
-        headers = { 'Accept': 'application/json' }
+        headers = self.get_default_headers()
         if 'headers' in kwargs:
             headers.update(kwargs['headers'])
 

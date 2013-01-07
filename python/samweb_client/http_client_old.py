@@ -101,10 +101,11 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         return self._doURL(url,action='GET',params=params, **kwargs)
 
     def _doURL(self, url, action='GET', params=None, data=None, content_type=None, prefetch=True, headers=None):
-        if headers is None:
-            headers = {}
-
-        headers['Accept'] = 'application/json'
+        request_headers = self.get_default_headers()
+        if headers is not None:
+            request_headers.update(headers)
+        if content_type:
+            request_headers['Content-Type'] = content_type
 
         if action in ('POST', 'PUT'):
             # these always require body data
@@ -119,11 +120,9 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         tmout = time.time() + self.maxtimeout
         retryinterval = 1
 
-        request = Request(url, headers=headers)
+        request = Request(url, headers=request_headers)
         if data is not None:
             request.add_data(data)
-        if content_type:
-            request.add_header('Content-Type', content_type)
         while True:
             try:
                 if self.verbose:

@@ -287,7 +287,7 @@ class projectSummaryCmd(ProjectCmdBase):
 
     def run(self, options, args):
         projecturl = self._getProjectUrl(options, args)
-        print self.samweb.projectSummary(projecturl)
+        print self.samweb.projectSummaryText(projecturl)
 
 class startProcessCmd(CmdBase):
     name = "start-process"
