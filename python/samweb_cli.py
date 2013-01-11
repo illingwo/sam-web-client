@@ -21,10 +21,24 @@ class CmdBase(object):
     def addOptions(self, parser):
         pass
 
+def _file_list_summary_str(summary):
+    return "File count:\t%(file_count)s\nTotal size:\t%(total_file_size)s\nEvent count:\t%(total_event_count)s" % summary
+
+def _file_list_str_gen(g, fileinfo):
+    if fileinfo:
+        for result in g:
+            yield '\t'.join(str(e) for e in result)
+    else:
+        for result in g:
+            yield result
 
 class listFilesCmd(CmdBase):
     name = "list-files"
-    options = [ ("parse-only", "Return parser output for these dimensions instead of evaluating them") ]
+    options = [ ("parse-only", "Return parser output for these dimensions instead of evaluating them"),
+                ("fileinfo", "Return additional information for each file"),
+                ("summary", "Return a summary of the results instead of the full list"),
+                ]
+
     description = "List files by dimensions query"
     cmdgroup = 'datafiles'
     args = "<dimensions query>"
@@ -35,9 +49,13 @@ class listFilesCmd(CmdBase):
             raise CmdError("No dimensions specified")
         if options.parse_only:
             print self.samweb.parseDims(dims)
+        elif options.summary:
+            summary = self.samweb.listFilesSummary(dims)
+            print _file_list_summary_str(summary)
         else:
-            for filename in self.samweb.listFiles(dims):
-                print filename
+            fileinfo = options.fileinfo
+            for l in _file_list_str_gen(self.samweb.listFiles(dims,fileinfo=fileinfo), fileinfo):
+                print l
 
 class countFilesCmd(CmdBase):
     name = "count-files"
@@ -184,12 +202,19 @@ class listDefinitionFilesCmd(CmdBase):
     name = "list-definition-files"
     description = "List files in a dataset definition"
     args = "<dataset definition>"
+    options = [ ("fileinfo", "Return additional information for each file"),
+                ("summary", "Return a summary of the results instead of the full list"),
+                ]
     cmdgroup = 'definitions'
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
-        for filename in self.samweb.listFiles(defname=args[0]):
-            print filename
+        if options.summary:
+            print _file_list_summary_str(self.samweb.listFilesSummary(defname=args[0]))
+        else:
+            fileinfo = options.fileinfo
+            for l in _file_list_str_gen(self.samweb.listFiles(defname=args[0],fileinfo=fileinfo), fileinfo):
+                print l
 
 class countDefinitionFilesCmd(CmdBase):
     name = "count-definition-files"

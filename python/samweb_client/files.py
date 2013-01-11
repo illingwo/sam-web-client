@@ -2,27 +2,48 @@
 from samweb_client import json, convert_from_unicode
 from samweb_client.client import samweb_method
 from samweb_client.http_client import escape_url_path
+from samweb_client.exceptions import *
 
 from itertools import ifilter
 
+try:
+    from collections import namedtuple
+except ImportError:
+    def fileinfo(*args): return tuple(args)
+else:
+    fileinfo = namedtuple("fileinfo", ["file_name", "file_id", "file_size", "event_count"])
+
+def _make_file_info(lines):
+    for l in lines:
+        values = l.split()
+        if values:
+            try:
+                yield fileinfo( values[0], long(values[1]), long(values[2]), int(values[3])  )
+            except Exception:
+                raise Error("Error while decoding file list output from server")
+
 @samweb_method
-def listFiles(samweb, dimensions=None, defname=None):
+def listFiles(samweb, dimensions=None, defname=None, fileinfo=False):
     """ list files matching either a dataset definition or a dimensions string
     arguments:
       dimensions: string (default None)
       defname: string definition name (default None)
+      fileinfo: boolean; if True, return file_id, file_size, event_count 
     
     returns:
       a generator producing file names (note that the network connection may not be closed
-        until you have read the entire list)
+        until you have read the entire list). If fileinfo is true, it will produce
+        (file_name, file_id, file_size, event_count) tuples
     """
 
     # This can return a potentially long list, so don't preload the result
     # instead return a generator which reads it progressively
     params = {'format':'plain'}
+    if fileinfo:
+        params['fileinfo'] = 1
     kwargs = { 'params' : params, 'prefetch':False }
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/list' % defname, **kwargs)
+        result = samweb.getURL('/definitions/name/%s/files/list' % escape_url_path(defname), **kwargs)
     else:
         if len(dimensions) > 1024:
             kwargs['data'] = {'dims':dimensions}
@@ -31,8 +52,30 @@ def listFiles(samweb, dimensions=None, defname=None):
             params['dims'] = dimensions
             method = samweb.getURL
         result = method('/files/list', **kwargs)
+    if fileinfo:
+        return _make_file_info(result.iter_lines())
+    else:
+        return ifilter( None, (l.strip() for l in result.iter_lines()) )
 
-    return ifilter( None, (l.strip() for l in result.iter_lines()) )
+@samweb_method
+def listFilesSummary(samweb, dimensions=None, defname=None):
+    """ return summary of files matching either a dataset definition or a dimensions string
+    arguments:
+      dimensions: string (default None)
+      defname: string definition name (default None)"""
+    if defname is not None:
+        result = samweb.getURL('/definitions/name/%s/files/summary' % escape_url_path(defname))
+    else:
+        params = {}
+        kwargs = {'params' : params }
+        if len(dimensions) > 1024:
+            kwargs['data'] = {'dims':dimensions}
+            method = samweb.postURL
+        else:
+            params.update({'dims':dimensions})
+            method = samweb.getURL
+        result = samweb.getURL('/files/summary', **kwargs)
+    return result.json
 
 @samweb_method
 def parseDims(samweb, dimensions):
