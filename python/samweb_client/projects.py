@@ -82,7 +82,7 @@ def stopProject(samweb, projecturl):
 
 @samweb_method
 def projectSummary(samweb, projecturl):
-    return convert_from_unicode(samweb.getURL(projecturl + "/summary").json)
+    return convert_from_unicode(samweb.getURL(projecturl + "/summary").json())
 
 @samweb_method
 def projectSummaryText(samweb, projecturl):

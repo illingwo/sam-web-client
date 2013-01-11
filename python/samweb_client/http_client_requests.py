@@ -85,7 +85,10 @@ class RequestsHTTPClient(SAMWebHTTPClient):
 
     def _make_session(self):
         if self._session is None:
-            self._session = requests.Session(verify=False, cert=self._cert, config=self._config)
+            self._session = requests.Session()
+            self._session.verify = False
+            self._session.cert = self._cert
+            self._session.config = self._config
 
     def use_client_certificate(self, cert=None, key=None):
         if cert:

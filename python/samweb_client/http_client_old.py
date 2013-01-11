@@ -16,16 +16,16 @@ def get_client():
 
 class Response(object):
     """ Wrapper for the response object. Provides a text attribue that contains the body of the response.
-    If prefetch = True, then the body is read immediately and the connection closed, else the data is not
+    If stream = False, then the body is read immediately and the connection closed, else the data is not
     read from the server until you try to access it
 
     The API tries to be similar to that of the requests library, since it'd be nice if we could replace urllib2
     with that. However, it doesn't work with python 2.4, which we need for SL5 support.
     """
 
-    def __init__(self, wrapped, prefetch=True):
+    def __init__(self, wrapped, stream=False):
         self._wrapped = wrapped
-        if prefetch:
+        if not stream:
             self._load_data()
         else:
             self._data = None
@@ -47,7 +47,7 @@ class Response(object):
     @property
     def headers(self):
         return self._wrapped.headers
-    @property
+
     def json(self):
         if self._data is None:
             return json.load(self._wrapped)
@@ -100,7 +100,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
     def getURL(self, url, params=None, **kwargs):
         return self._doURL(url,action='GET',params=params, **kwargs)
 
-    def _doURL(self, url, action='GET', params=None, data=None, content_type=None, prefetch=True, headers=None):
+    def _doURL(self, url, action='GET', params=None, data=None, content_type=None, stream=False, headers=None):
         request_headers = self.get_default_headers()
         if headers is not None:
             request_headers.update(headers)
@@ -127,7 +127,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
             try:
                 if self.verbose:
                     sys.stderr.write("%s   %s   %s\n" % (datetime.now().isoformat(), action, url))
-                return Response(urlopen(request), prefetch=prefetch)
+                return Response(urlopen(request), stream=stream)
             except HTTPError, x:
                 #python 2.4 treats 201 and up as errors instead of normal return codes
                 if 201 <= x.code <= 299:

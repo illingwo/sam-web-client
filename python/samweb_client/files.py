@@ -41,7 +41,7 @@ def listFiles(samweb, dimensions=None, defname=None, fileinfo=False):
     params = {'format':'plain'}
     if fileinfo:
         params['fileinfo'] = 1
-    kwargs = { 'params' : params, 'prefetch':False }
+    kwargs = { 'params' : params, 'stream':True }
     if defname is not None:
         result = samweb.getURL('/definitions/name/%s/files/list' % escape_url_path(defname), **kwargs)
     else:
@@ -75,7 +75,7 @@ def listFilesSummary(samweb, dimensions=None, defname=None):
             params.update({'dims':dimensions})
             method = samweb.getURL
         result = samweb.getURL('/files/summary', **kwargs)
-    return result.json
+    return result.json()
 
 @samweb_method
 def parseDims(samweb, dimensions):
@@ -127,7 +127,7 @@ def locateFile(samweb, filenameorid):
     """
     url = _make_file_path(filenameorid) + '/locations'
     result = samweb.getURL(url)
-    return convert_from_unicode(result.json)
+    return convert_from_unicode(result.json())
 
 @samweb_method
 def addFileLocation(samweb, filenameorid, location):
@@ -158,7 +158,7 @@ def getMetadata(samweb, filenameorid):
         name or id of file
     """
     response = samweb.getURL(_make_file_path(filenameorid) + '/metadata')
-    return convert_from_unicode(response.json)
+    return convert_from_unicode(response.json())
 
 @samweb_method
 def getMetadataText(samweb, filenameorid, format=None):
@@ -178,7 +178,7 @@ def getFileLineage(samweb, lineagetype, filenameorid):
         name or id of file
     """
     result = samweb.getURL(_make_file_path(filenameorid) + '/lineage/' + escape_url_path(lineagetype))
-    return convert_from_unicode(result.json)
+    return convert_from_unicode(result.json())
 
 @samweb_method
 def declareFile(samweb, md=None, mdfile=None):
@@ -210,7 +210,7 @@ def listDefinitions(samweb, **queryCriteria):
     """
     params = dict(queryCriteria)
     params['format'] = 'plain'
-    result = samweb.getURL('/definitions/list', params, prefetch=False)
+    result = samweb.getURL('/definitions/list', params, stream=True)
     return ifilter( None, (l.strip() for l in result.iter_lines()) )
 
 def _descDefinitionURL(defname):
@@ -223,7 +223,7 @@ def descDefinitionDict(samweb, defname):
         definition name
     """
     result = self.getURL(_descDefinitionURL(defname))
-    return convert_from_unicode(result.json)
+    return convert_from_unicode(result.json())
 
 @samweb_method
 def descDefinition(samweb, defname):
