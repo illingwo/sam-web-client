@@ -1,4 +1,5 @@
 
+import time
 from samweb_client import json, convert_from_unicode
 from samweb_client.client import samweb_method
 from exceptions import *
@@ -59,7 +60,7 @@ def getNextFile(samweb, processurl):
         data = result.text.strip()
         if code == 202:
             retry_interval = 10
-            retry_after = result.info().getheader('Retry-After')
+            retry_after = result.headers.getheader('Retry-After')
             if retry_after:
                 try:
                     retry_interval = int(retry_after)
