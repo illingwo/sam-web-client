@@ -1,5 +1,5 @@
 
-import time
+import time, os
 from samweb_client import json, convert_from_unicode
 from samweb_client.client import samweb_method
 from exceptions import *
@@ -69,7 +69,14 @@ def getNextFile(samweb, processurl):
         elif code == 204:
             raise NoMoreFiles()
         else:
-            return data
+            if 'application/json' in result.headers['Content-Type']:
+                return result.json()
+            lines = data.split('\n')
+            output = { "url" : lines[0] }
+            if len(lines) > 1: output["filename"] = lines[1]
+            else:
+                output["filename"] = os.path.basename(output["url"])
+            return output
 
 @samweb_method
 def releaseFile(samweb, processurl, filename, status="ok"):

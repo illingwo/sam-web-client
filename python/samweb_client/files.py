@@ -254,7 +254,7 @@ def createDefinition(samweb, defname, dims, user=None, group=None, description=N
         params["description"] = description
 
     result = samweb.postURL('/definitions/create', params)
-    return result.text.rstrip()
+    return result.json()
 
 @samweb_method
 def deleteDefinition(samweb, defname):

@@ -241,7 +241,8 @@ class createDefinitionCmd(CmdBase):
         dims = ' '.join(args[1:])
         if not dims:
             raise CmdError("No dimensions specified")
-        return self.samweb.createDefinition(defname, dims, options.user, options.group, options.description)
+        result = self.samweb.createDefinition(defname, dims, options.user, options.group, options.description)
+        print "Dataset definition '%s' has been created with id %s" % (result["defname"], result["defid"])
 
 class deleteDefinitionCmd(CmdBase):
     name = "delete-definition"
@@ -366,7 +367,10 @@ class getNextFileCmd(ProcessCmd):
         processurl = self.makeProcessUrl(args)
         try:
             rval = self.samweb.getNextFile(processurl)
-            print rval
+            if not rval["url"].endswith(rval["filename"]):
+                print "%s\t%s" % (rval["url"], rval["filename"])
+            else:
+                print rval["url"]
         except NoMoreFiles:
             return 0
 
