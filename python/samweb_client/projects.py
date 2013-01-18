@@ -13,13 +13,26 @@ def makeProjectName(samweb, description):
     return "%s_%s_%s" % ( samweb.user ,description, now)
 
 @samweb_method
-def startProject(samweb, defname, project, station=None, user=None, group=None):
+def startProject(samweb, project, defname, station=None, group=None, user=None):
+    """ Start a project on a station
+    arguments:
+        project: project name
+        defname: definition name
+        station: station name (defaults to experiment name)
+        group: group name (defaults to experiment name)
+        user: user name (default is username from certificate)
+    """
+
     if not station: station = samweb.get_station()
-    if not user: user = samweb.user
     if not group: group = samweb.group
-    args = {'name':project,'station':station,"defname":defname,"username":user,"group":group}
-    result = samweb.postURL('/startProject', args)
-    return {'project':project,'dataset':defname,'projectURL':result.text.strip()}
+    args = {'name':project,'station':station,"defname":defname,"group":group}
+    if user: args["username"] = user
+    result = samweb.postURL('/startProject', args, secure=True)
+    projecturl = result.text.strip()
+    if projecturl.startswith('https'):
+        # prefer to use unencrypted project urls
+        projecturl = samweb.findProject(project, station)
+    return {'project':project,'dataset':defname,'projectURL':projecturl}
 
 @samweb_method
 def findProject(samweb, project, station=None):
@@ -85,6 +98,8 @@ def releaseFile(samweb, processurl, filename, status="ok"):
 
 @samweb_method
 def stopProject(samweb, projecturl):
+    if not '://' in projecturl:
+        projecturl = samweb.findProject(projecturl)
     args = { "force" : 1 }
     return samweb.postURL(projecturl + "/endProject", args).text.rstrip()
 
