@@ -268,7 +268,7 @@ def createDefinition(samweb, defname, dims, user=None, group=None, description=N
     if description:
         params["description"] = description
 
-    result = samweb.postURL('/definitions/create', params)
+    result = samweb.postURL('/definitions/create', params, secure=True)
     return result.json()
 
 @samweb_method
@@ -279,6 +279,6 @@ def deleteDefinition(samweb, defname):
 
     (Definitions that have already been used cannot be deleted)
     """
-    result = samweb.postURL('/definitions/name/%s/delete' % defname, {})
+    result = samweb.postURL('/definitions/name/%s/delete' % defname, {}, secure=True)
     return result.text.rstrip()
 
