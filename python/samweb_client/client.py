@@ -91,6 +91,14 @@ class SAMWebClient(object):
         url = self._prepareURL(url, secure)
         return self.http_client.postURL(url, data=data, *args, **kwargs)
 
+    def putURL(self, url, data=None, secure=None, *args, **kwargs):
+        url = self._prepareURL(url, secure)
+        return self.http_client.putURL(url, data=data, *args, **kwargs)
+
+    def deleteURL(self, url, params=None, secure=None, *args, **kwargs):
+        url = self._prepareURL(url, secure)
+        return self.http_client.deleteURL(url, params=params, *args, **kwargs)
+
     def get_verbose(self):
         return self.http_client.verbose
     def set_verbose(self, verbose):

@@ -135,7 +135,7 @@ class fileLineage(CmdBase):
 class declareFileCmd(CmdBase):
     name = 'declare-file'
     description = "Declare a new file into the database"
-    args = "<name of metadata file>"
+    args = "<name of metadata file (json format)>"
     cmdgroup = 'datafiles'
 
     def run(self, options, args):
@@ -145,8 +145,30 @@ class declareFileCmd(CmdBase):
             try:
                 f = open(name)
             except IOError, ex:
-                raise CmdError("Failed to open file: %s: " % (name, str(ex)))
-            self.samweb.declareFile(mdfile=f)
+                raise CmdError("Failed to open file: %s: %s" % (name, str(ex)))
+            try:
+                self.samweb.declareFile(mdfile=f)
+            finally:
+                f.close()
+
+class modifyMetadataCmd(CmdBase):
+    name = 'modify-metadata'
+    description = "Modify metadata for an existing file"
+    args = "<file name> <name of file containing metadata parameters to modify (json format)>"
+    cmdgroup = 'datafiles'
+
+    def run(self, options, args):
+        if len(args) != 2:
+            raise CmdError("Invalid arguments provided")
+        try:
+            f = open(args[1])
+        except IOError, ex:
+            raise CmdError("Failed to open file: %s: %s" % (args[1], str(ex)))
+        try:
+            self.samweb.modifyFileMetadata(args[0], mdfile=f)
+        finally:
+            f.close()
+        print "Metadata has been updated for file '%s'" % args[0]
 
 class retireFileCmd(CmdBase):
     name = 'retire-file'

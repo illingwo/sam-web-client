@@ -194,6 +194,21 @@ def declareFile(samweb, md=None, mdfile=None):
     return samweb.postURL('/files', data=data, content_type='application/json', secure=True).text
 
 @samweb_method
+def modifyFileMetadata(samweb, filename, md=None, mdfile=None):
+    """ Modify file metadata
+    arguments:
+        filename
+        md: dictionary containing metadata (default None)
+        mdfile: file object containing metadata (must be in json format)
+    """
+    if md:
+        data = json.dumps(md)
+    else:
+        data = mdfile.read()
+    url = _make_file_path(filename)
+    return samweb.putURL(url + "/metadata", data=data, content_type='application/json', secure=True).text
+
+@samweb_method
 def retireFile(samweb, filename):
     """ Retire a file:
     arguments:

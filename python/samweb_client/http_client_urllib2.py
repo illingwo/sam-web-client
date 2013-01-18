@@ -5,7 +5,6 @@ import urllib2,httplib
 from urllib2 import urlopen, URLError, HTTPError, Request
 
 import time, socket, os, sys
-from datetime import datetime
 
 from samweb_client import Error, json
 from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, SAMWebHTTPError
@@ -88,31 +87,37 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
+class RequestWithMethod(urllib2.Request):
+    def __init__(self, *args, **kwargs):
+        self._method = kwargs.pop('method', None)
+        urllib2.Request.__init__(self, *args, **kwargs)
+
+    def get_method(self):
+        return self._method or urllib2.Request.get_method(self)
+
 class URLLib2HTTPClient(SAMWebHTTPClient):
     """ HTTP client using standard urllib2 implementation """
 
     def __init__(self, *args, **kwargs):
         SAMWebHTTPClient.__init__(self, *args, **kwargs)
 
-    def postURL(self, url, data=None, content_type=None, **kwargs):
-        return self._doURL(url, action='POST', data=data, content_type=content_type, **kwargs)
-
-    def getURL(self, url, params=None, **kwargs):
-        return self._doURL(url,action='GET',params=params, **kwargs)
-
-    def _doURL(self, url, action='GET', params=None, data=None, content_type=None, stream=False, headers=None):
+    def _doURL(self, url, method='GET', params=None, data=None, content_type=None, stream=False, headers=None):
         request_headers = self.get_default_headers()
         if headers is not None:
             request_headers.update(headers)
         if content_type:
             request_headers['Content-Type'] = content_type
 
-        if action in ('POST', 'PUT'):
+        if method in ('POST', 'PUT'):
             # these always require body data
             if data is None:
                 data = ''
+
+        self._logMethod(method, url, params=params, data=data)
+
         if isinstance(data, dict):
             data = urlencode(data)
+
         if params is not None:
             if '?' not in url: url += '?'
             else: url += '&'
@@ -120,13 +125,11 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         tmout = time.time() + self.maxtimeout
         retryinterval = 1
 
-        request = Request(url, headers=request_headers)
+        request = RequestWithMethod(url, method=method, headers=request_headers)
         if data is not None:
             request.add_data(data)
         while True:
             try:
-                if self.verbose:
-                    sys.stderr.write("%s   %s   %s\n" % (datetime.now().isoformat(), action, url))
                 return Response(urlopen(request), stream=stream)
             except HTTPError, x:
                 #python 2.4 treats 201 and up as errors instead of normal return codes
@@ -144,7 +147,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                 if x.code > 500 and time.time() < tmout:
                     pass
                 else:
-                    raise makeHTTPError(action, url, x.code, errmsg, errtype)
+                    raise makeHTTPError(method, url, x.code, errmsg, errtype)
             except URLError, x:
                 if isinstance(x.reason, socket.sslerror):
                     raise self.make_ssl_error(str(x.reason))

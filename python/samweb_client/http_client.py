@@ -1,4 +1,6 @@
 
+import sys
+from datetime import datetime
 from samweb_client.exceptions import Error
 
 class SAMWebConnectionError(Error):
@@ -82,10 +84,34 @@ class SAMWebHTTPClient(object):
         #return a copy as the user may modify it
         return dict(self._default_headers)
 
+    def _logMethod(self, method, url, params=None, data=None):
+        if self.verbose:
+            sys.stderr.write("%s %s %s" % (datetime.now().isoformat(), method, url))
+            if params:
+                sys.stderr.write(" params='%s'" % params)
+            if data:
+                if isinstance(data, dict):
+                    sys.stderr.write(" data='%s'" % data)
+                else:
+                    sys.stderr.write(" data=<%d bytes>" % len(data))
+            sys.stderr.write("\n")
+
+    def postURL(self, url, data=None, content_type=None, **kwargs):
+        return self._doURL(url, method='POST', data=data, content_type=content_type, **kwargs)
+
+    def getURL(self, url, params=None, **kwargs):
+        return self._doURL(url, method='GET',params=params, **kwargs)
+
+    def putURL(self, url, data=None, content_type=None, **kwargs):
+        return self._doURL(url, method='PUT', data=data, content_type=content_type, **kwargs)
+
+    def deleteURL(self, url, params=None, **kwargs):
+        return self._doURL(url, method='DELETE',params=params, **kwargs)
+
 try:
     from http_client_requests import get_client
 except ImportError:
-    from http_client_old import get_client
+    from http_client_urllib2 import get_client
 
 from urllib import quote as escape_url_path
 
