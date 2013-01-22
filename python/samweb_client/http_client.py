@@ -1,5 +1,5 @@
 
-import sys
+import sys, os
 from datetime import datetime
 from samweb_client.exceptions import Error
 
@@ -29,7 +29,7 @@ class SAMWebHTTPError(Error):
             return "HTTP error: %(code)d %(msg)s\nURL: %(url)s" % self.__dict__
 
 def _get_from():
-    import os,pwd,socket
+    import pwd,socket
     username = os.environ.get('USER')
     if not username:
         try:
@@ -41,13 +41,15 @@ def _get_from():
     except:
         return username
 
+
+
 class SAMWebHTTPClient(object):
     maxtimeout=60*30 # default max timeout
     maxretryinterval = 60 # default max retry interval
     verbose = False # Full verbose mode
     verboseretries = True # whether to print output when retrying
 
-    _default_headers = { 'Accept' : 'application/json', 'From' : _get_from() }
+    _default_headers = { 'Accept' : 'application/json', 'From' : _get_from()}
 
     def __init__(self, maxtimeout=None, maxretryinterval=None, verbose=None, verboseretries=None, *args, **kwargs):
         if maxtimeout is not None:
@@ -58,6 +60,8 @@ class SAMWebHTTPClient(object):
             self.verboseretries = verboseretries
         if verbose is not None:
             self.verbose = verbose
+        if 'User-Agent' not in self._default_headers:
+            self._default_headers['User-Agent'] = self._get_user_agent()
 
     def make_ssl_error(self, msg):
         """ Try to make sense of ssl errors and return a suitable exception object """
@@ -107,6 +111,22 @@ class SAMWebHTTPClient(object):
 
     def deleteURL(self, url, params=None, **kwargs):
         return self._doURL(url, method='DELETE',params=params, **kwargs)
+
+    def _get_user_agent(self):
+        import sys
+        try:
+            from _version import version
+        except ImportError:
+            version = 'devel'
+
+        # if running from a git checkout, try to obtain the version
+        gitdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../.git")
+        if os.path.exists(gitdir):
+            import subprocess
+            p = subprocess.Popen(["git", "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=None)
+            if p.wait() == 0:
+                version = p.stdout.read().strip()
+        return 'SAMWebClient/%s (%s) python/%s' % (version, os.path.basename(sys.argv[0] or sys.executable), '%d.%d.%d' % sys.version_info[:3])
 
 try:
     from http_client_requests import get_client

@@ -58,13 +58,13 @@ class RequestsHTTPClient(SAMWebHTTPClient):
                     return response
                 else:
                     # something went wrong
-                    jsonerr = response.json()
-                    if jsonerr is None:
-                        errmsg = response.text.rstrip()
-                        errtype =  response.reason
-                    else:
+                    if 'application/json' in response.headers['Content-Type']:
+                        jsonerr = response.json()
                         errmsg = jsonerr['message']
                         errtype = jsonerr['error']
+                    else:
+                        errmsg = response.text.rstrip()
+                        errtype =  response.reason
                     exc = makeHTTPError(response.request.method, url, response.status_code, errmsg, errtype)
                     if 400 <= response.status_code <= 500:
                         # For any 400 error + 500 errors, don't bother retrying
@@ -104,5 +104,10 @@ class RequestsHTTPClient(SAMWebHTTPClient):
         if not data:
             kwargs.setdefault('headers',{})['Content-Length'] = '0'
         return SAMWebHTTPClient.putURL(self, url, data, **kwargs)
+
+    def _get_user_agent(self):
+        ua = SAMWebHTTPClient._get_user_agent(self)
+        ua += " requests/%s" % requests.__version__
+        return ua
 
 __all__ = [ 'get_client' ]

@@ -87,6 +87,28 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
+class HTTP307RedirectHandler(urllib2.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        m = req.get_method()
+        if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
+            or code in (301, 302, 303) and m == "POST"):
+            # Strictly (according to RFC 2616), 301 or 302 in response
+            # to a POST MUST NOT cause a redirection without confirmation
+            # from the user (of urllib2, in this case).  In practice,
+            # essentially all clients do redirect in this case, so we
+            # do the same.
+            return Request(newurl,
+                           headers=req.headers,
+                           origin_req_host=req.get_origin_req_host(),
+                           unverifiable=True)
+        elif code==307:
+            newreq = RequestWithMethod(newurl, method=req.get_method(), headers=req.headers, origin_req_host=req.get_origin_req_host(), unverifiable=True)
+            if req.get_data() is not None: newreq.add_data(req.get_data())
+            return newreq
+
+        else:
+            raise HTTPError(req.get_full_url(), code, msg, headers, fp)
+
 class RequestWithMethod(urllib2.Request):
     def __init__(self, *args, **kwargs):
         self._method = kwargs.pop('method', None)
@@ -100,6 +122,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
 
     def __init__(self, *args, **kwargs):
         SAMWebHTTPClient.__init__(self, *args, **kwargs)
+        self._opener = urllib2.build_opener(HTTP307RedirectHandler())
 
     def _doURL(self, url, method='GET', params=None, data=None, content_type=None, stream=False, headers=None):
         request_headers = self.get_default_headers()
@@ -130,7 +153,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
             request.add_data(data)
         while True:
             try:
-                return Response(urlopen(request), stream=stream)
+                return Response(self._opener.open(request), stream=stream)
             except HTTPError, x:
                 #python 2.4 treats 201 and up as errors instead of normal return codes
                 if 201 <= x.code <= 299:
@@ -168,8 +191,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         if not cert:
             cert = key = self.get_standard_certificate_path()
         if cert:
-            opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key) )
-            urllib2.install_opener(opener)
+            self._opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key), HTTP307RedirectHandler )
             self._cert = cert
 
 __all__ = [ 'get_client' ]

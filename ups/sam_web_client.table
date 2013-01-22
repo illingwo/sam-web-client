@@ -1,0 +1,16 @@
+File=table
+Product=sam_web_client
+
+Group:
+    Flavor=ANY
+    Qualifiers=""
+
+Common:
+
+Action=Setup
+    setupEnv()
+    prodDir()
+    pathPrepend(PATH, ${UPS_PROD_DIR}/bin)
+    pathPrepend(PYTHONPATH, ${UPS_PROD_DIR}/python)
+
+End:
