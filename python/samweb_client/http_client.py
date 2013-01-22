@@ -60,6 +60,7 @@ class SAMWebHTTPClient(object):
             self.verboseretries = verboseretries
         if verbose is not None:
             self.verbose = verbose
+        self._cert = None
         if 'User-Agent' not in self._default_headers:
             self._default_headers['User-Agent'] = self._get_user_agent()
 
