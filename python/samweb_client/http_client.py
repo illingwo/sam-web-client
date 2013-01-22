@@ -124,7 +124,7 @@ class SAMWebHTTPClient(object):
         gitdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../.git")
         if os.path.exists(gitdir):
             import subprocess
-            p = subprocess.Popen(["git", "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=None)
+            p = subprocess.Popen(["git", "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if p.wait() == 0:
                 version = p.stdout.read().strip()
         return 'SAMWebClient/%s (%s) python/%s' % (version, os.path.basename(sys.argv[0] or sys.executable), '%d.%d.%d' % sys.version_info[:3])
