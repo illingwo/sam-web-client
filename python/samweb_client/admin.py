@@ -6,7 +6,7 @@ from samweb_client.http_client import escape_url_path
 @samweb_method
 def listApplications(samweb, **queryCriteria):
     result = samweb.getURL('/values/applications', queryCriteria)
-    return convert_from_unicode(result.json)
+    return convert_from_unicode(result.json())
 
 @samweb_method
 def addApplication(samweb, family, name, version):
@@ -15,7 +15,7 @@ def addApplication(samweb, family, name, version):
 @samweb_method
 def listUsers(samweb):
     result = samweb.getURL('/users')
-    return convert_from_unicode(result.json)
+    return convert_from_unicode(result.json())
 
 @samweb_method
 def _describeUser(samweb, username, format=None):
@@ -27,7 +27,7 @@ def _describeUser(samweb, username, format=None):
 @samweb_method
 def describeUser(samweb, username):
     result = samweb._describeUser(username)
-    return convert_from_unicode(result.json)
+    return convert_from_unicode(result.json())
 
 @samweb_method
 def describeUserText(samweb, username):
