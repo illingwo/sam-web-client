@@ -118,15 +118,17 @@ class SAMWebHTTPClient(object):
         try:
             from _version import version
         except ImportError:
-            version = 'devel'
+            version = 'unknown'
 
         # if running from a git checkout, try to obtain the version
         gitdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../.git")
         if os.path.exists(gitdir):
             import subprocess
-            p = subprocess.Popen(["git", "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if p.wait() == 0:
-                version = p.stdout.read().strip()
+            try:
+                p = subprocess.Popen(["git", "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if p.wait() == 0:
+                    version = p.stdout.read().strip()
+            except: pass
         return 'SAMWebClient/%s (%s) python/%s' % (version, os.path.basename(sys.argv[0] or sys.executable), '%d.%d.%d' % sys.version_info[:3])
 
 try:
