@@ -1,7 +1,7 @@
 
 from samweb_client import json, convert_from_unicode, Error
 from samweb_client.client import samweb_method
-from samweb_client.http_client import escape_url_path
+from samweb_client.http_client import escape_url_path, SAMWebHTTPError
 
 @samweb_method
 def listApplications(samweb, **queryCriteria):
@@ -55,3 +55,18 @@ def addUser(samweb, username, firstname=None, lastname=None, email=None, uid=Non
 @samweb_method
 def modifyUser(samweb, username, **args):
     return samweb.postURL('/users/name/%s' % escape_url_path(username), data=json.dumps(args), content_type='application/json', secure=True).text.rstrip()
+
+@samweb_method
+def listValues(samweb, vtype):
+    """ list values from database. This method tries to be generic, so vtype is
+    passed directly to the web server
+    arguments:
+        vtype: string with values to return (ie data_tiers, groups)
+    """
+    try:
+        return samweb.getURL('/values/%s' % escape_url_path(vtype)).json()
+    except SAMWebHTTPError, ex:
+        if ex.code == 404:
+            raise Error("Unknown value type '%s'" % vtype)
+        else: raise
+

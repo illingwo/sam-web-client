@@ -414,6 +414,31 @@ class releaseFileCmd(ProcessCmd):
         if not status: status = 'ok'
         self.samweb.releaseFile(processurl, filename)
 
+class listValuesCmd(CmdBase):
+
+    name = 'list-values'
+    description = "List values from the database"
+    cmdgroup = 'admin'
+    args = "<data_tiers|file_types|file_formats|groups>"
+    def run(self, options, args):
+        if len(args) != 1:
+            raise CmdError("Invalid arguments")
+
+        vtype = args[0]
+        for i in self.samweb.listValues(vtype):
+            if isinstance(i, basestring): line = i
+            elif isinstance(i, dict):
+                # if the dict contains a key which is a prefix of the vtype
+                # then print that value (ie for data_tiers print the value of the data_tier key)
+                # else join the values with tabs
+                for k in i:
+                    if vtype.startswith(k): line = i[k]
+                    break
+                else:
+                    line = '\t'.join(str(i[k]) for k in sorted(i.iterkeys()))
+            else: line = '\t'.join(str(v) for v in i)
+            print line
+
 class listApplicationsCmd(CmdBase):
     name = 'list-applications'
     description = "List defined applications"
