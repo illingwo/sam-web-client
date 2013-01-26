@@ -70,7 +70,9 @@ class SAMWebHTTPClient(object):
             if self._cert:
                 errmsg = "SSL error: %s: is client certificate valid?" % msg
             else:
-                errmsg = "SSL error: %s: no client certificate has been installed" % msg
+                errmsg = "SSL error: %s: no client certificate found" % msg
+        elif 'SSL_CTX_use_PrivateKey_file' in msg:
+            errmsg = "SSL error: unable to open private key file"
         else:
             errmsg = "SSL error: %s" % msg
         return SAMWebSSLError(errmsg)
@@ -78,6 +80,10 @@ class SAMWebHTTPClient(object):
     def get_standard_certificate_path(self):
         import os
         cert = os.environ.get('X509_USER_PROXY')
+        if not cert:
+            cert = os.environ.get('X509_USER_CERT')
+            key = os.environ.get('X509_USER_KEY')
+            if cert and key: cert = (cert, key)
         if not cert:
             # look in standard place for cert
             proxypath = '/tmp/x509up_u%d' % os.getuid()

@@ -70,7 +70,7 @@ class RequestsHTTPClient(SAMWebHTTPClient):
                         # For any 400 error + 500 errors, don't bother retrying
                         raise exc
             except requests.exceptions.SSLError, ex:
-                msg = ex.message
+                msg = str(ex.message)
                 raise self.make_ssl_error(msg)
             except requests.exceptions.Timeout, ex:
                 exc = SAMWebConnectionError("%s: Timed out waiting for response" % (url,))

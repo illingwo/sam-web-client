@@ -73,10 +73,12 @@ class Response(object):
 # sensitive infomation (not that SAM deals with that)
 # as there's no protection against man-in-the-middle attacks
 class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
-    def __init__(self, cert, key):
+    def __init__(self, cert):
         urllib2.HTTPSHandler.__init__(self)
-        self.cert = cert
-        self.key = key
+        if isinstance(cert, basestring):
+            self.cert = self.key = cert
+        else:
+            self.cert, self.key = cert
 
     def https_open(self, req):
         # Rather than pass in a reference to a connection class, we pass in
@@ -189,9 +191,9 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
     def use_client_certificate(self, cert=None, key=None):
         """ Use the given certificate and key for client ssl authentication """
         if not cert:
-            cert = key = self.get_standard_certificate_path()
+            cert = self.get_standard_certificate_path()
         if cert:
-            self._opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, key), HTTP307RedirectHandler )
+            self._opener = urllib2.build_opener(HTTPSClientAuthHandler(cert), HTTP307RedirectHandler )
             self._cert = cert
 
 __all__ = [ 'get_client' ]
