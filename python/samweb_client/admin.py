@@ -64,7 +64,26 @@ def listValues(samweb, vtype):
         vtype: string with values to return (ie data_tiers, groups)
     """
     try:
-        return samweb.getURL('/values/%s' % escape_url_path(vtype)).json()
+        return convert_from_unicode(samweb.getURL('/values/%s' % escape_url_path(vtype)).json())
+    except SAMWebHTTPError, ex:
+        if ex.code == 404:
+            raise Error("Unknown value type '%s'" % vtype)
+        else: raise
+
+@samweb_method
+def addValue(samweb, vtype, *args, **kwargs):
+    """ Add a new value to the database
+    arguments:
+        vtype: string giving the type of value to add ( ie data_tiers, groups)
+        *args: arguments to pass to server
+        **kwargs: keyword arguments to pass to server
+    """
+    # build the provided arguments into a parameter list. The args sequence is turned into multiple
+    # "value" parameters
+    postdata = dict(kwargs)
+    if args: postdata["value"] = [str(i) for i in args]
+    try:
+        return samweb.postURL('/values/%s' % escape_url_path(vtype), postdata, secure=True)
     except SAMWebHTTPError, ex:
         if ex.code == 404:
             raise Error("Unknown value type '%s'" % vtype)

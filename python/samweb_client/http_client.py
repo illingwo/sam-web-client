@@ -99,10 +99,10 @@ class SAMWebHTTPClient(object):
         if self.verbose:
             sys.stderr.write("%s %s %s" % (datetime.now().isoformat(), method, url))
             if params:
-                sys.stderr.write(" params='%s'" % params)
+                sys.stderr.write(" params=%s" % params)
             if data:
                 if isinstance(data, dict):
-                    sys.stderr.write(" data='%s'" % data)
+                    sys.stderr.write(" data=%s" % data)
                 else:
                     sys.stderr.write(" data=<%d bytes>" % len(data))
             sys.stderr.write("\n")

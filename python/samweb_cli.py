@@ -419,7 +419,7 @@ class listValuesCmd(CmdBase):
     name = 'list-values'
     description = "List values from the database"
     cmdgroup = 'admin'
-    args = "<data_tiers|file_types|file_formats|groups>"
+    args = "<data_tiers|file_types|file_formats|groups|...>"
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Invalid arguments")
@@ -438,6 +438,18 @@ class listValuesCmd(CmdBase):
                     line = '\t'.join(str(i[k]) for k in sorted(i.iterkeys()))
             else: line = '\t'.join(str(v) for v in i)
             print line
+
+class addValueCmd(CmdBase):
+    name = 'add-value'
+    description = "Add value to the database"
+    cmdgroup = 'admin'
+    args = "<data_tiers|file_types|file_formats|groups|...> <value> [<value> [<value> [...]]]"
+    def run(self, options, args):
+        if not args:
+            raise CmdError("Invalid arguments")
+        vtype = args.pop(0)
+        self.samweb.addValue(vtype, *args)
+        print "Added value to %s" % vtype
 
 class listApplicationsCmd(CmdBase):
     name = 'list-applications'

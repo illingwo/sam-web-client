@@ -140,13 +140,13 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
 
         self._logMethod(method, url, params=params, data=data)
 
-        if isinstance(data, dict):
-            data = urlencode(data)
+        if data is not None and not isinstance(data, basestring):
+            data = urlencode(data, doseq=True)
 
         if params is not None:
             if '?' not in url: url += '?'
             else: url += '&'
-            url += urlencode(params)
+            url += urlencode(params, doseq=True)
         tmout = time.time() + self.maxtimeout
         retryinterval = 1
 
