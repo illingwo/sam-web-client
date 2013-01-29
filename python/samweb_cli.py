@@ -132,6 +132,25 @@ class fileLineage(CmdBase):
                         break
         _printLineage(self.samweb.getFileLineage(args[0], args[1]))
 
+class calculateChecksumCmd(CmdBase):
+    name = 'file-checksum'
+    description = 'Calculate a checksum for a file using the enstore algorithm (sometimes inaccurately described as a "CRC")'
+    args = "<path to file> [<path to file> [...]]"
+    cmdgroup = 'utility'
+
+    def run(self, options, args):
+        if not args:
+            raise CmdError("No file paths provided")
+        from samweb_client.utility import fileEnstoreChecksum
+        if len(args) == 1:
+            print json.dumps(fileEnstoreChecksum(args[0]))
+        else:
+            for a in args:
+                try:
+                    print "%s: %s" % (a, json.dumps(fileEnstoreChecksum(a)))
+                except Error, ex:
+                    print "%s: %s" % (a, ex)
+
 class declareFileCmd(CmdBase):
     name = 'declare-file'
     description = "Declare a new file into the database"
