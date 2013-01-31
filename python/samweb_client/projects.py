@@ -42,7 +42,7 @@ def findProject(samweb, project, station=None):
     return result.text.strip()
 
 @samweb_method
-def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None):
+def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None, schemas=None):
     if not deliveryLocation:
         import socket
         deliveryLocation = socket.getfqdn()
@@ -54,6 +54,8 @@ def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLoc
         args["appfamily"] = appfamily
     if maxFiles:
         args["filelimit"] = maxFiles
+    if schemas:
+        args["schemas"] = schemas
     result = samweb.postURL(projecturl + '/establishProcess', args)
     return result.text.strip()
 

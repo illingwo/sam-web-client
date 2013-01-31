@@ -359,7 +359,7 @@ class projectSummaryCmd(ProjectCmdBase):
 class startProcessCmd(CmdBase):
     name = "start-process"
     description = "Start a consumer process within a project"
-    options = [ "appfamily=", "appname=", "appversion=", "delivery-location=", "url", "max-files=" ]
+    options = [ "appfamily=", "appname=", "appversion=", "delivery-location=", "url", "max-files=", "schemas=" ]
     args = "<project name or url>"
     cmdgroup = 'projects'
 
@@ -376,6 +376,8 @@ class startProcessCmd(CmdBase):
         kwargs = { "deliveryLocation":options.delivery_location }
         if options.max_files:
             kwargs['maxFiles'] = options.max_files
+        if options.schemas:
+            kwargs['schemas'] = options.schemas
 
         rval = self.samweb.startProcess(projecturl, options.appfamily, options.appname,
                 options.appversion, **kwargs)
