@@ -107,9 +107,19 @@ def stopProject(samweb, projecturl):
 
 @samweb_method
 def projectSummary(samweb, projecturl):
+    if not '://' in projecturl:
+        projecturl = samweb.findProject(projecturl)
     return convert_from_unicode(samweb.getURL(projecturl + "/summary").json())
 
 @samweb_method
 def projectSummaryText(samweb, projecturl):
+    if not '/' in projecturl:
+        projecturl = "/projects/name/%s" % projecturl
     return samweb.getURL(projecturl + "/summary", params=dict(format='plain')).text.rstrip()
+
+@samweb_method
+def projectRecoveryDimension(samweb, projecturl,useFileStatus = 1, useProcessStatus = 1):
+    if not '/' in projecturl:
+        projecturl = "/projects/name/%s" % projecturl
+    return convert_from_unicode(samweb.getURL(projecturl + "/recoveryDimension?useFiles=%d&useProcess=%d" % (useFileStatus,useProcessStatus)).text.rstrip())
 
