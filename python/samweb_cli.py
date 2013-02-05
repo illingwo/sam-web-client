@@ -372,10 +372,12 @@ class projectRecoveryDimensionCmd(ProjectCmdBase):
     args = "<project name>"
     options = [ "useFileStatus=", "useProcessStatus=" ]
 
-
     def run(self, options, args):
-        uf = int(options.useFileStatus if options.useFileStatus else "1")
-        up = int(options.useProcessStatus if options.useProcessStatus else "1")
+        try:
+            uf = int(options.useFileStatus or "1")
+            up = int(options.useProcessStatus or "1")
+        except ValueError:
+            raise CmdError("Invalid option flag")
         projecturl = self._getProjectNameUrl(options, args)
         print self.samweb.projectRecoveryDimension(projecturl, useFileStatus=uf, useProcessStatus = up)
 
