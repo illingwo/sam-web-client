@@ -2,6 +2,7 @@
 import time, os
 from samweb_client import json, convert_from_unicode
 from samweb_client.client import samweb_method
+from samweb_client.http_client import escape_url_path
 from exceptions import *
 
 @samweb_method
@@ -108,18 +109,18 @@ def stopProject(samweb, projecturl):
 @samweb_method
 def projectSummary(samweb, projecturl):
     if not '://' in projecturl:
-        projecturl = samweb.findProject(projecturl)
+        projecturl = '/projects/name/%s' % escape_url_path(projecturl)
     return convert_from_unicode(samweb.getURL(projecturl + "/summary").json())
 
 @samweb_method
 def projectSummaryText(samweb, projecturl):
-    if not '/' in projecturl:
-        projecturl = "/projects/name/%s" % projecturl
+    if not '://' in projecturl:
+        projecturl = '/projects/name/%s' % escape_url_path(projecturl)
     return samweb.getURL(projecturl + "/summary", params=dict(format='plain')).text.rstrip()
 
 @samweb_method
 def projectRecoveryDimension(samweb, projecturl,useFileStatus = 1, useProcessStatus = 1):
-    if not '/' in projecturl:
-        projecturl = "/projects/name/%s" % projecturl
-    return convert_from_unicode(samweb.getURL(projecturl + "/recoveryDimension?useFiles=%d&useProcess=%d" % (useFileStatus,useProcessStatus)).text.rstrip())
+    if not '://' in projecturl:
+        projecturl = "/projects/name/%s" % escape_url_path(projecturl)
+    return convert_from_unicode(samweb.getURL(projecturl + "/recoveryDimension", params={ "format" : "plain", "useFiles": useFileStatus, "useProcess" : useProcessStatus}).text.rstrip())
 

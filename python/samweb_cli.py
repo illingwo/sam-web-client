@@ -328,14 +328,11 @@ class ProjectCmdBase(CmdBase):
             projecturl = self.samweb.findProject(projecturl, options.station)
         return projecturl
 
-    def _getProjectNameUrl(self, options, args):
+    def _getProjectNameOrUrl(self, options, args):
         try:
             projecturl = args.pop(0)
         except IndexError:
             raise CmdError("Must specify project name or url")
-
-        if not '/' in projecturl:
-            projecturl = "/projects/name/%s" % projecturl
         return projecturl
 
 class findProjectCmd(ProjectCmdBase):
@@ -363,7 +360,7 @@ class projectSummaryCmd(ProjectCmdBase):
     args = "<project name>"
 
     def run(self, options, args):
-        projecturl = self._getProjectNameUrl(options, args)
+        projecturl = self._getProjectNameOrUrl(options, args)
         print self.samweb.projectSummaryText(projecturl)
 
 class projectRecoveryDimensionCmd(ProjectCmdBase):
@@ -378,7 +375,7 @@ class projectRecoveryDimensionCmd(ProjectCmdBase):
             up = int(options.useProcessStatus or "1")
         except ValueError:
             raise CmdError("Invalid option flag")
-        projecturl = self._getProjectNameUrl(options, args)
+        projecturl = self._getProjectNameOrUrl(options, args)
         print self.samweb.projectRecoveryDimension(projecturl, useFileStatus=uf, useProcessStatus = up)
 
 class startProcessCmd(CmdBase):
