@@ -124,3 +124,30 @@ def projectRecoveryDimension(samweb, projecturl,useFileStatus = 1, useProcessSta
         projecturl = "/projects/name/%s" % escape_url_path(projecturl)
     return convert_from_unicode(samweb.getURL(projecturl + "/recoveryDimension", params={ "format" : "plain", "useFiles": useFileStatus, "useProcess" : useProcessStatus}).text.rstrip())
 
+@samweb_method
+def setProcessStatus(samweb, status, projectnameorurl, processid=None, process_desc=None):
+    """ Mark the final status of a process
+
+    Either the processid or the process description must be provided. If the description is
+    used it must be unique within the project
+
+    arguments:
+        status: completed or bad
+        projectnameorurl: project name or url
+        processid: process identifier
+        process_desc: process description
+    """
+    if '://' not in projectnameorurl:
+        url = '/projects/name/%s' % escape_url_path(projectnameorurl)
+    else: url = projectnameorurl
+    args = { "status" : status }
+    if processid is not None:
+        url += '/processes/%s' % processid
+    elif process_desc is not None:
+        url += '/process_description/%s' % escape_url_path(process_desc)
+    else:
+        # assume direct process url
+        pass
+
+    return samweb.putURL(url + "/status", args, secure=True).text.rstrip()
+

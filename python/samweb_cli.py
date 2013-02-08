@@ -457,6 +457,26 @@ class releaseFileCmd(ProcessCmd):
         if not status: status = 'ok'
         self.samweb.releaseFile(processurl, filename)
 
+class setProcessStatusCmd(CmdBase):
+    name = 'set-process-status'
+    description = "Set the process status"
+    args = "(<process url> | <project name or url> [process id]) <status>"
+    options = ['description=']
+
+    def run(self, options, args):
+        process_description = options.description
+        processid = None
+        try:
+            nameorurl = args.pop(0)
+            if process_description is None:
+                if len(args) == 2:
+                    processid = args.pop(0)
+            status = args[0]
+
+        except IndexError:
+            raise CmdError("Invalid arguments")
+        self.samweb.setProcessStatus(status, nameorurl, processid=processid, process_desc=process_description)
+
 class listValuesCmd(CmdBase):
 
     name = 'list-values'
