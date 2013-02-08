@@ -21,6 +21,14 @@ class CmdBase(object):
     def addOptions(self, parser):
         pass
 
+class serverInfoCmd(CmdBase):
+    name = 'server-info'
+    description = 'Display information about the server'
+    cmdgroup = 'utility'
+
+    def run(self, options, args):
+        print self.samweb.serverInfo()
+
 def _file_list_summary_str(summary):
     return "File count:\t%(file_count)s\nTotal size:\t%(total_file_size)s\nEvent count:\t%(total_event_count)s" % summary
 
@@ -462,6 +470,7 @@ class setProcessStatusCmd(CmdBase):
     description = "Set the process status"
     args = "(<process url> | <project name or url> [process id]) <status>"
     options = ['description=']
+    cmdgroup='projects'
 
     def run(self, options, args):
         process_description = options.description
@@ -610,6 +619,7 @@ group_descriptions = {
         "definitions" : "Definition commands",
         "projects" : "Project commands",
         "admin": "Admin commands",
+        "utility": "Utility commands"
         }
 
 # add all commands that define a name attribute to the list
