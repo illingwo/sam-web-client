@@ -372,19 +372,16 @@ class projectSummaryCmd(ProjectCmdBase):
         print self.samweb.projectSummaryText(projecturl)
 
 class projectRecoveryDimensionCmd(ProjectCmdBase):
-    name = "project-recovery-dimension"
+    name = "project-recovery"
     description = "Display the dimensions for the recovery dataset for a project"
     args = "<project name>"
-    options = [ "useFileStatus=", "useProcessStatus=" ]
+    options = [ ("useFileStatus=int", "Use the status of the last file in a process"),
+                ( "useProcessStatus=int", "Use the process status") ]
 
     def run(self, options, args):
-        try:
-            uf = int(options.useFileStatus or "1")
-            up = int(options.useProcessStatus or "1")
-        except ValueError:
-            raise CmdError("Invalid option flag")
         projecturl = self._getProjectNameOrUrl(options, args)
-        print self.samweb.projectRecoveryDimension(projecturl, useFileStatus=uf, useProcessStatus = up)
+        result = self.samweb.projectRecoveryDimension(projecturl, useFileStatus=options.useFileStatus, useProcessStatus = options.useProcessStatus)
+        if result: print result
 
 class startProcessCmd(CmdBase):
     name = "start-process"
@@ -692,9 +689,15 @@ def main():
             optname, description = opt
         else:
             optname, description = opt, None
-        if optname.endswith('='):
+
+        # if the name contains '=', then the option takes an argument
+        # if the '=' is followed by something, use this as the type
+        idx = optname.find('=')
+        if idx != -1:
             # value
-            optname = optname[:-1]
+            typ = optname[idx+1:]
+            optname = optname[:idx]
+            if typ: attribs['type'] = typ
         else:
             # flag
             attribs.update({"action":"store_true", "default":False})

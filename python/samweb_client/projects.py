@@ -119,10 +119,19 @@ def projectSummaryText(samweb, projecturl):
     return samweb.getURL(projecturl + "/summary", params=dict(format='plain')).text.rstrip()
 
 @samweb_method
-def projectRecoveryDimension(samweb, projecturl,useFileStatus = 1, useProcessStatus = 1):
-    if not '://' in projecturl:
-        projecturl = "/projects/name/%s" % escape_url_path(projecturl)
-    return convert_from_unicode(samweb.getURL(projecturl + "/recoveryDimension", params={ "format" : "plain", "useFiles": useFileStatus, "useProcess" : useProcessStatus}).text.rstrip())
+def projectRecoveryDimension(samweb, projectnameorurl, useFileStatus=None, useProcessStatus=None):
+    """Get the dimensions to create a recovery dataset
+    arguments:
+        projectnameorurl : name or url of the project
+        useFileStatus : use the status of the last file seen by a process (default unset)
+        useProcessStatus : use the status of the process (default unset)
+    """
+    if not '://' in projectnameorurl:
+        projectnameorurl = "/projects/name/%s" % escape_url_path(projectnameorurl)
+    params = { "format" : "plain" }
+    if useFileStatus is not None: params['useFiles'] = useFileStatus
+    if useProcessStatus is not None: params['useProcess'] = useProcessStatus
+    return convert_from_unicode(samweb.getURL(projectnameorurl + "/recovery_dimensions", params=params).text.rstrip())
 
 @samweb_method
 def setProcessStatus(samweb, status, projectnameorurl, processid=None, process_desc=None):
