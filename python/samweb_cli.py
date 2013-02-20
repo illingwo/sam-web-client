@@ -716,7 +716,7 @@ def main():
     # configure https settings
     cert = options.cert or cmdoptions.cert
     key = options.key or cmdoptions.key or cert
-    if cert: samweb.set_certificate(cert, key)
+    if cert: samweb.set_client_certificate(cert, key)
 
     if options.secure or cmdoptions.secure:
         samweb.secure = True
