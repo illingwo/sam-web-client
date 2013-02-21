@@ -1,7 +1,7 @@
 
 from samweb_client import json, convert_from_unicode, Error
 from samweb_client.client import samweb_method
-from samweb_client.http_client import escape_url_path, SAMWebHTTPError
+from samweb_client.http_client import escape_url_path, SAMWebHTTPError, HTTPNotFound
 
 @samweb_method
 def listApplications(samweb, **queryCriteria):
@@ -65,10 +65,8 @@ def listValues(samweb, vtype):
     """
     try:
         return convert_from_unicode(samweb.getURL('/values/%s' % escape_url_path(vtype)).json())
-    except SAMWebHTTPError, ex:
-        if ex.code == 404:
-            raise Error("Unknown value type '%s'" % vtype)
-        else: raise
+    except HTTPNotFound, ex:
+        raise Error("Unknown value type '%s'" % vtype)
 
 @samweb_method
 def addValue(samweb, vtype, *args, **kwargs):
@@ -84,8 +82,6 @@ def addValue(samweb, vtype, *args, **kwargs):
     if args: postdata["value"] = [str(i) for i in args]
     try:
         return samweb.postURL('/values/%s' % escape_url_path(vtype), postdata, secure=True)
-    except SAMWebHTTPError, ex:
-        if ex.code == 404:
-            raise Error("Unknown value type '%s'" % vtype)
-        else: raise
+    except HTTPNotFound, ex:
+        raise Error("Unknown value type '%s'" % vtype)
 
