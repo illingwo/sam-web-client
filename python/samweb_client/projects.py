@@ -82,7 +82,7 @@ def getNextFile(samweb, processurl):
         data = result.text.strip()
         if code == 202:
             retry_interval = 10
-            retry_after = result.headers.getheader('Retry-After')
+            retry_after = result.headers.get('Retry-After')
             if retry_after:
                 try:
                     retry_interval = int(retry_after)
