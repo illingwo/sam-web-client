@@ -166,7 +166,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                     errtype = err['error']
                 else:
                     errmsg = x.read().rstrip()
-                    errtype = x.msg
+                    errtype = None
                 x.close() # ensure that the socket is closed (otherwise it may hang around in the traceback object)
                 # retry server errors (excluding internal errors)
                 if x.code > 500 and time.time() < tmout:

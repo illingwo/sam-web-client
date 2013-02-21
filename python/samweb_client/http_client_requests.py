@@ -64,7 +64,7 @@ class RequestsHTTPClient(SAMWebHTTPClient):
                         errtype = jsonerr['error']
                     else:
                         errmsg = response.text.rstrip()
-                        errtype =  response.reason
+                        errtype = None
                     exc = makeHTTPError(response.request.method, url, response.status_code, errmsg, errtype)
                     if 400 <= response.status_code <= 500:
                         # For any 400 error + 500 errors, don't bother retrying
