@@ -386,7 +386,14 @@ class projectRecoveryDimensionCmd(ProjectCmdBase):
 class startProcessCmd(CmdBase):
     name = "start-process"
     description = "Start a consumer process within a project"
-    options = [ "appfamily=", "appname=", "appversion=", "delivery-location=", "url", "max-files=", "schemas=" ]
+    options = [ "appfamily=", "appname=", "appversion=",
+            ("url", "Return the entire process url rather than just the process id"), 
+            ("node=", "The current node name. The default is the local hostname, which is appropriate for most situations"),
+            ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"), 
+            ("max-files=int", "Limit the maximum number of files to give to the process"), 
+            ("description=", "Text description of the process"),
+            ("schemas=", "Comma separated list of url schemas this process prefers to receive") 
+            ]
     args = "<project name or url>"
     cmdgroup = 'projects'
 
@@ -400,9 +407,15 @@ class startProcessCmd(CmdBase):
         if not '://' in projecturl:
             projecturl = self.samweb.findProject(projecturl)
 
-        kwargs = { "deliveryLocation":options.delivery_location }
+        kwargs={}
+        if options.node:
+            kwargs["node"]= options.node
+        if options.delivery_location:
+            kwargs["deliveryLocation"]= options.delivery_location
         if options.max_files:
             kwargs['maxFiles'] = options.max_files
+        if options.description:
+            kwargs['description'] = options.description
         if options.schemas:
             kwargs['schemas'] = options.schemas
 

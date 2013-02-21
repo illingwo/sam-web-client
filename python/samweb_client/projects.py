@@ -43,18 +43,24 @@ def findProject(samweb, project, station=None):
     return result.text.strip()
 
 @samweb_method
-def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, user=None, maxFiles=None, schemas=None):
-    if not deliveryLocation:
+def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLocation=None, node=None,
+        user=None, maxFiles=None, description=None, schemas=None):
+    if not node:
+        # default for the node is the local hostname
         import socket
-        deliveryLocation = socket.getfqdn()
+        node = socket.getfqdn()
     if not user:
         user = samweb.user
 
-    args = { "appname":appname, "appversion":appversion, "deliverylocation" : deliveryLocation, "username":user }
+    args = { "appname":appname, "appversion":appversion, "node" : node, "username":user }
     if appfamily:
         args["appfamily"] = appfamily
     if maxFiles:
         args["filelimit"] = maxFiles
+    if deliveryLocation:
+        args["deliverylocation"] = deliveryLocation
+    if description:
+        args["description"] = description
     if schemas:
         args["schemas"] = schemas
     result = samweb.postURL(projecturl + '/establishProcess', args)
