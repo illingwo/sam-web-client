@@ -158,6 +158,34 @@ class calculateChecksumCmd(CmdBase):
                     print "%s: %s" % (a, json.dumps(fileEnstoreChecksum(a)))
                 except Error, ex:
                     print "%s: %s" % (a, ex)
+class validateFileMetadata(CmdBase):
+    name = 'validate-metadata'
+    description = "Check file metadata for correctness"
+    args = "<name of metadata file (json format)>"
+    cmdgroup = 'datafiles'
+
+    def run(self, options, args):
+        if not args:
+            raise CmdError("No metadata files provided")
+        rval = 0
+        for name in args:
+            if len(args) > 1:
+                sys.stdout.write("%s: " % name)
+            try:
+                try:
+                    f = open(name)
+                except IOError, ex:
+                    raise CmdError("Failed to open file: %s" % (str(ex)))
+                try:
+                    self.samweb.validateFileMetadata(mdfile=f)
+                finally:
+                    f.close()
+            except Error, ex:
+                sys.stdout.write("%s\n" % ex)
+                rval = 1
+            else:
+                sys.stdout.write("Metadata is valid\n")
+        return rval
 
 class declareFileCmd(CmdBase):
     name = 'declare-file'
@@ -655,7 +683,11 @@ def _list_commands(option, opt, value, parser):
     print command_list()
     parser.exit()
 
-def main():
+def main(args=None):
+
+    # Allow passing arguments for testing purposes
+    if args is None:
+        args = sys.argv[1:]
 
     usage = "%prog [base options] <command> [command options] ..."
     parser = optparse.OptionParser(usage=usage)
@@ -670,7 +702,7 @@ def main():
     base_options.add_option('-v','--verbose', action="store_true", dest='verbose', default=False, help="Verbose mode")
     parser.add_option_group(base_options)
 
-    (options, args) = parser.parse_args(sys.argv[1:])
+    (options, args) = parser.parse_args(args)
     if not args:
         print>>sys.stderr, "No command specified"
         parser.print_help(sys.stderr)

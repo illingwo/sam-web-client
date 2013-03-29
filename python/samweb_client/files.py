@@ -181,6 +181,21 @@ def getFileLineage(samweb, lineagetype, filenameorid):
     return convert_from_unicode(result.json())
 
 @samweb_method
+def validateFileMetadata(samweb, md=None, mdfile=None):
+    """ Check the metadata for validity
+    arguments:
+        md: dictionary containing metadata (default None)
+        mdfile: file object containing metadata (must be in json format)
+    """
+    if md:
+        data = json.dumps(md)
+    elif mdfile:
+        data = mdfile.read()
+    else:
+        raise Error('Must specify metadata dictionary or file object')
+    return samweb.postURL('/files/validate_metadata', data=data, content_type='application/json').text
+
+@samweb_method
 def declareFile(samweb, md=None, mdfile=None):
     """ Declare a new file
     arguments:
@@ -189,8 +204,10 @@ def declareFile(samweb, md=None, mdfile=None):
     """
     if md:
         data = json.dumps(md)
-    else:
+    elif mdfile:
         data = mdfile.read()
+    else:
+        raise Error('Must specify metadata dictionary or file object')
     return samweb.postURL('/files', data=data, content_type='application/json', secure=True).text
 
 @samweb_method
