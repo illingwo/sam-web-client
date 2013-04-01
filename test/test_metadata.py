@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 import testbase
 import unittest
 import samweb_client

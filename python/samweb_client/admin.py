@@ -85,3 +85,19 @@ def addValue(samweb, vtype, *args, **kwargs):
     except HTTPNotFound, ex:
         raise Error("Unknown value type '%s'" % vtype)
 
+@samweb_method
+def listParameters(samweb):
+    """ list defined parameters """
+    return convert_from_unicode(samweb.getURL('/values/parameters').json())
+
+@samweb_method
+def addParameter(samweb, name, data_type, category=None):
+    """ Add a new parameter to the database
+    arguments:
+        name: Parameter name (either just the name, or category.name)
+        datatype: data type for new parameter
+    """
+    data = { 'name' : name, 'data_type' : data_type }
+    if category: data['category'] = category
+    return samweb.postURL('/values/parameters', data, secure=True)
+

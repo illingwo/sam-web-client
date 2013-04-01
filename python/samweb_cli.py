@@ -524,6 +524,33 @@ class setProcessStatusCmd(CmdBase):
             raise CmdError("Invalid arguments")
         self.samweb.setProcessStatus(status, nameorurl, processid=processid, process_desc=process_description)
 
+class listParametersCmd(CmdBase):
+    name = 'list-parameters'
+    description = "List defined parameters"
+    cmdgroup = 'admin'
+
+    def run(self, options, args):
+
+        for p in self.samweb.listParameters():
+            if isinstance(p, basestring): line = p
+            elif isinstance(p, dict):
+                line = "%(name)s\t%(data_type)s" % p
+            else: line = str(p)
+            print line
+
+class addParameterCmd(CmdBase):
+    name = 'add-parameter'
+    description = "Add new parameter"
+    cmdgroup = 'admin'
+    args = "<category.name> <data type>"
+    def run(self, options, args):
+        try:
+            name, data_type = args
+        except ValueError:
+            raise CmdError("Invalid arguments")
+
+        self.samweb.addParameter(name, data_type)
+
 class listValuesCmd(CmdBase):
 
     name = 'list-values'

@@ -18,4 +18,4 @@ dist: all
 
 .PHONY: test
 test:
-	test/testsuite.py
+	@test/testsuite.py
