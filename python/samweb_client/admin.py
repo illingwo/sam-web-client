@@ -101,3 +101,16 @@ def addParameter(samweb, name, data_type, category=None):
     if category: data['category'] = category
     return samweb.postURL('/values/parameters', data, secure=True)
 
+@samweb_method
+def listDataDisks(samweb):
+    """ list defined data disks """
+    return convert_from_unicode(samweb.getURL('/values/data_disks').json())
+
+@samweb_method
+def addDataDisk(samweb, mount_point):
+    """ Add a new data disk to the database 
+    arguments:
+        mount_point: The mount point for the new disk
+    """
+    return samweb.postURL('/values/data_disks', {'mountpoint': mount_point}, secure=True)
+

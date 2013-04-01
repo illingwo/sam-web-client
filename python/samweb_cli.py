@@ -551,6 +551,29 @@ class addParameterCmd(CmdBase):
 
         self.samweb.addParameter(name, data_type)
 
+class listDataDisks(CmdBase):
+    name = 'list-data-disks'
+    description = "List defined data disks"
+    cmdgroup = 'admin'
+
+    def run(self, options, args):
+        for d in self.samweb.listDataDisks():
+            print d["mount_point"]
+
+class addDataDiskCmd(CmdBase):
+    name = 'add-data-disk'
+    description = "Add a new data disk"
+    cmdgroup = 'admin'
+    args = "<mount point>"
+
+    def run(self, options, args):
+        try:
+            mount_point, = args
+        except ValueError:
+            raise CmdError("Invalid arguments")
+
+        self.samweb.addDataDisk(mount_point)
+
 class listValuesCmd(CmdBase):
 
     name = 'list-values'
