@@ -26,11 +26,10 @@ class TestAdminCommands(testbase.SAMWebCmdTest):
         cmdline = '-e minerva/dev list-parameters'
         self.trap_output()
         try:
-            rval = samweb_cli.main(cmdline.split())
+            self.check_cmd_return(samweb_cli.main(cmdline.split()))
         finally:
             self.restore_output()
         assert 'Offline.tag (string)' in self.stdout
-        assert rval is None
 
     def test_addParameterCmd(self):
         cmdline = '-e minerva/dev add-parameter Offline.tag string'
@@ -45,11 +44,10 @@ class TestAdminCommands(testbase.SAMWebCmdTest):
         cmdline = '-e minerva/dev list-data-disks'
         self.trap_output()
         try:
-            rval = samweb_cli.main(cmdline.split())
+            self.check_cmd_return(samweb_cli.main(cmdline.split()))
         finally:
             self.restore_output()
 
-        assert rval is None
         assert 'minerva_bluearc:/minerva/data\n' in self.stdout
 
     def test_addDataDiskCmd(self):

@@ -43,4 +43,6 @@ class SAMWebCmdTest(unittest.TestCase):
             self._stdoutio = None
             self._stderrio = None
         
+    def check_cmd_return(self, rval):
+        assert rval is None or rval == 0
 

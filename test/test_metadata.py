@@ -33,7 +33,7 @@ class TestMetadataMinerva(testbase.MinervaDevTest):
         md = {'file_name' : 'test_file_name'}
         self.assertRaises(samweb_client.exceptions.InvalidMetadata, self.samweb.validateFileMetadata, md=md)
 
-class TestMetadataCommands(unittest.TestCase):
+class TestMetadataCommands(testbase.SAMWebCmdTest):
 
     def test_validateMetadataCmd(self):
         md = {'file_name' : 'test_file_name', 'file_type' : 'nonPhysicsGeneric', 'file_size' : 1024,
@@ -44,11 +44,22 @@ class TestMetadataCommands(unittest.TestCase):
         tmp.flush()
 
         cmdline = '-e minerva/dev validate-metadata %s' % tmp.name
-        samweb_cli.main(cmdline.split())
+        self.trap_output()
+        try:
+            self.check_cmd_return(samweb_cli.main(cmdline.split()))
+        finally:
+            self.restore_output()
+        assert "Metadata is valid" in self.stdout
 
     def test_getMetadataCmd(self):
         cmdline = '-e minerva/dev get-metadata MN_00000798_0004_numib_v04_0911090239_RawEvents.root'
-        samweb_cli.main(cmdline.split())
+        self.trap_output()
+        try:
+            self.check_cmd_return(samweb_cli.main(cmdline.split()))
+        finally:
+            self.restore_output()
+
+        assert "File Name: MN_00000798_0004_numib_v04_0911090239_RawEvents.root" in self.stdout
 
 if __name__ == '__main__':
     unittest.main()
