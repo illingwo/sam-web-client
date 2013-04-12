@@ -8,5 +8,8 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.normpath(os.path.join(ourpath, '../python')))
 
     import samweb_cli
-    sys.exit(samweb_cli.main())
+    try:
+        sys.exit(samweb_cli.main())
+    except KeyboardInterrupt:
+        sys.exit(130)
 
