@@ -106,7 +106,7 @@ class SAMWebHTTPClient(object):
         if os.path.exists(gitdir):
             import subprocess
             try:
-                p = subprocess.Popen(["git", "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p = subprocess.Popen(["git", "--work-tree=%s" % os.path.join(gitdir,".."), "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 if p.wait() == 0:
                     version = p.stdout.read().strip()
             except: pass
