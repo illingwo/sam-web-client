@@ -3,6 +3,9 @@ import testbase
 import unittest
 import samweb_client
 import samweb_cli
+import time
+
+test_file_name = 'test_file_name' +  str(long(time.time()))
 
 class TestMetadataMinerva(testbase.MinervaDevTest):
 
@@ -14,12 +17,12 @@ class TestMetadataMinerva(testbase.MinervaDevTest):
         self.assertEqual(md['file_name'], 'MN_00000798_0004_numib_v04_0911090239_RawEvents.root')
 
     def test_validateMetadata(self):
-        md = {'file_name' : 'test_file_name', 'file_type' : 'nonPhysicsGeneric', 'file_size' : 1024,
+        md = {'file_name' : test_file_name, 'file_type' : 'nonPhysicsGeneric', 'file_size' : 1024,
             'data_tier':'raw',}
         self.samweb.validateFileMetadata(md=md)
 
     def test_validateMetadataFile(self):
-        md = {'file_name' : 'test_file_name', 'file_type' : 'nonPhysicsGeneric', 'file_size' : 1024,
+        md = {'file_name' : test_file_name, 'file_type' : 'nonPhysicsGeneric', 'file_size' : 1024,
             'data_tier':'raw',}
         import tempfile
         tmp = tempfile.TemporaryFile()
@@ -30,13 +33,13 @@ class TestMetadataMinerva(testbase.MinervaDevTest):
 
 
     def test_validateMetadataBad(self):
-        md = {'file_name' : 'test_file_name'}
+        md = {'file_name' : test_file_name}
         self.assertRaises(samweb_client.exceptions.InvalidMetadata, self.samweb.validateFileMetadata, md=md)
 
 class TestMetadataCommands(testbase.SAMWebCmdTest):
 
     def test_validateMetadataCmd(self):
-        md = {'file_name' : 'test_file_name', 'file_type' : 'nonPhysicsGeneric', 'file_size' : 1024,
+        md = {'file_name' : test_file_name, 'file_type' : 'nonPhysicsGeneric', 'file_size' : 1024,
             'data_tier':'raw',}
         import tempfile
         tmp = tempfile.NamedTemporaryFile()
