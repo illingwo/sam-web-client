@@ -57,6 +57,11 @@ def modifyUser(samweb, username, **args):
     return samweb.postURL('/users/name/%s' % escape_url_path(username), data=json.dumps(args), content_type='application/json', secure=True).text.rstrip()
 
 @samweb_method
+def getAvailableValues(samweb):
+    """ get the available names that can be used with listValues, addValues """
+    return convert_from_unicode(samweb.getURL('/values?list=generic').json())
+
+@samweb_method
 def listValues(samweb, vtype):
     """ list values from database. This method tries to be generic, so vtype is
     passed directly to the web server

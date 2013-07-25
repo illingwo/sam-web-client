@@ -574,13 +574,25 @@ class addDataDiskCmd(CmdBase):
 
         self.samweb.addDataDisk(mount_point)
 
-class listValuesCmd(CmdBase):
+class _DBValuesCmdBase(CmdBase):
+    cmdgroup = 'admin'
+    args = "<see --help-categories>"
+    options = [('help-categories', 'list the database categories that can be used')]
+    def _listCategories(self):
+        print 'Available database categories:'
+        print
+        names = self.samweb.getAvailableValues()
+        for name, details in names.iteritems():
+            print name, details['args']
+            print '    %s' % (details['description'], )
+
+class listValuesCmd(_DBValuesCmdBase):
 
     name = 'list-values'
     description = "List values from the database"
-    cmdgroup = 'admin'
-    args = "<data_tiers|file_types|file_formats|groups|data_streams|...>"
     def run(self, options, args):
+        if options.help_categories:
+            return self._listCategories()
         if len(args) != 1:
             raise CmdError("Invalid arguments")
 
@@ -599,12 +611,12 @@ class listValuesCmd(CmdBase):
             else: line = '\t'.join(str(v) for v in i)
             print line
 
-class addValueCmd(CmdBase):
+class addValueCmd(_DBValuesCmdBase):
     name = 'add-value'
     description = "Add value to the database"
-    cmdgroup = 'admin'
-    args = "<data_tiers|file_types|file_formats|groups|data_streams|...> <value> [<value> [<value> [...]]]"
     def run(self, options, args):
+        if options.help_categories:
+            return self._listCategories()
         if not args:
             raise CmdError("Invalid arguments")
         vtype = args.pop(0)
