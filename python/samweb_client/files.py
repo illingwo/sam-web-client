@@ -254,7 +254,7 @@ def descDefinitionDict(samweb, defname):
     arguments:
         definition name
     """
-    result = self.getURL(_descDefinitionURL(defname))
+    result = samweb.getURL(_descDefinitionURL(defname))
     return convert_from_unicode(result.json())
 
 @samweb_method
