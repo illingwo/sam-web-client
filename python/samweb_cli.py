@@ -578,12 +578,15 @@ class _DBValuesCmdBase(CmdBase):
     cmdgroup = 'admin'
     args = "<see --help-categories>"
     options = [('help-categories', 'list the database categories that can be used')]
-    def _listCategories(self):
+    def _listCategories(self, include_args=False):
         print 'Available database categories:'
         print
         names = self.samweb.getAvailableValues()
         for name, details in names.iteritems():
-            print name, details['args']
+            if include_args:
+                print name, details['args']
+            else:
+                print name
             print '    %s' % (details['description'], )
 
 class listValuesCmd(_DBValuesCmdBase):
@@ -616,7 +619,7 @@ class addValueCmd(_DBValuesCmdBase):
     description = "Add value to the database"
     def run(self, options, args):
         if options.help_categories:
-            return self._listCategories()
+            return self._listCategories(include_args=True)
         if not args:
             raise CmdError("Invalid arguments")
         vtype = args.pop(0)
