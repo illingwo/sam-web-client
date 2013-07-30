@@ -12,6 +12,9 @@ class SAMWebTest(unittest.TestCase):
     def setUp(self):
         self.samweb = samweb_client.SAMWebClient(experiment=self.experiment)
 
+class SamdevTest(SAMWebTest):
+    experiment = 'samdev'
+
 class MinervaDevTest(SAMWebTest):
     experiment = 'minerva/dev'
 
@@ -38,11 +41,22 @@ class SAMWebCmdTest(unittest.TestCase):
         if self._stdoutio is not None:
             sys.stdout = self.originalstdout
             sys.stderr = self.originalstderr
-            self.stdout = self._stdoutio.getvalue()
-            self.stderr = self._stderrio.getvalue()
+            self.stdout = self._stdoutio.getvalue() or ""
+            self.stderr = self._stderrio.getvalue() or ""
             self._stdoutio = None
             self._stderrio = None
         
-    def check_cmd_return(self, rval):
+    def run_cmd(self, cmdline):
+        import samweb_cli
+        if isinstance(cmdline, str):
+            cmdline = cmdline.split()
+        self.trap_output()
+        try:
+            return samweb_cli.main(cmdline)
+        finally:
+            self.restore_output()
+
+    def check_cmd_return(self, cmdline):
+        rval = self.run_cmd(cmdline)
         assert rval is None or rval == 0
 

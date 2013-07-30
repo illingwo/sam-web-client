@@ -47,20 +47,12 @@ class TestMetadataCommands(testbase.SAMWebCmdTest):
         tmp.flush()
 
         cmdline = '-e minerva/dev validate-metadata %s' % tmp.name
-        self.trap_output()
-        try:
-            self.check_cmd_return(samweb_cli.main(cmdline.split()))
-        finally:
-            self.restore_output()
+        self.check_cmd_return(cmdline.split())
         assert "Metadata is valid" in self.stdout
 
     def test_getMetadataCmd(self):
         cmdline = '-e minerva/dev get-metadata MN_00000798_0004_numib_v04_0911090239_RawEvents.root'
-        self.trap_output()
-        try:
-            self.check_cmd_return(samweb_cli.main(cmdline.split()))
-        finally:
-            self.restore_output()
+        self.check_cmd_return(cmdline.split())
 
         assert "File Name: MN_00000798_0004_numib_v04_0911090239_RawEvents.root" in self.stdout
 
