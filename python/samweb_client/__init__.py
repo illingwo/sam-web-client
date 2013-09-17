@@ -33,5 +33,6 @@ import http_client
 from client import SAMWebClient 
 import projects
 import files
+import definitions
 import admin
 import misc

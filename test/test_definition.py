@@ -20,5 +20,18 @@ class TestDefinitionMinerva(testbase.MinervaDevTest):
         d = self.samweb.descDefinitionDict(defname)
         assert d['defname'] == defname
 
+    def test_snapshot(self):
+        output = self.samweb.takeSnapshot(defname)
+        self.assertEquals(int(output),8130)
+
+class TestDefinitionCommands(testbase.SAMWebCmdTest):
+
+    def test_takeSnapshot(self):
+
+        cmdline = '-e minerva/dev take-snapshot %s' % defname
+        self.check_cmd_return(cmdline.split())
+        assert "8130" in self.stdout
+
+
 if __name__ == '__main__':
     unittest.main()

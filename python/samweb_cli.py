@@ -331,22 +331,35 @@ class deleteDefinitionCmd(CmdBase):
             raise CmdError("Argument should be exactly one definition name")
         return self.samweb.deleteDefinition(args[0])
 
+class takeSnapshotCmd(CmdBase):
+    name = "take-snapshot"
+    description = "Take a snapshot of an existing dataset definition"
+    args = "<dataset definition>"
+    options = ["group=",]
+    cmdgroup = 'definitions'
+
+    def run(self, options, args):
+        if len(args) != 1:
+            raise CmdError("Argument should be exactly one definition name")
+        snap_id = self.samweb.takeSnapshot(args[0], group=options.group)
+        print snap_id
+
+
 class startProjectCmd(CmdBase):
     name = "start-project"
     description = "Start a new project"
-    options = [ "defname=", "group=", "station=" ]
+    options = [ "defname=", "snapshotid=int", "group=", "station=" ]
     args = "[project name]"
     cmdgroup = 'projects'
 
     def run(self, options, args):
-        if not options.defname:
-            raise CmdError("Definition name not specified")
         defname = options.defname
+        snapshotid = options.snapshotid
         try:
             project = args[0]
         except IndexError:
             project = self.samweb.makeProjectName(defname)
-        rval = self.samweb.startProject(project, defname=defname, station=options.station, group=options.group)
+        rval = self.samweb.startProject(project, defname=defname, snapshotid=snapshotid, station=options.station, group=options.group)
         print rval["projectURL"]
 
 class ProjectCmdBase(CmdBase):

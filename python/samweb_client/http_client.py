@@ -118,4 +118,6 @@ except ImportError:
     from http_client_urllib2 import get_client
 
 from urllib import quote as escape_url_path
+def escape_url_component(s):
+    return escape_url_path(s, safe='')
 
