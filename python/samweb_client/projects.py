@@ -14,7 +14,7 @@ def makeProjectName(samweb, description):
     return "%s_%s_%s" % ( samweb.user ,description, now)
 
 @samweb_method
-def startProject(samweb, project, defname=None, station=None, group=None, user=None, snapshotid=None):
+def startProject(samweb, project, defname=None, station=None, group=None, user=None, snapshot_id=None):
     """ Start a project on a station. One of defname or snapshotid must be given
     arguments:
         project: project name
@@ -22,17 +22,17 @@ def startProject(samweb, project, defname=None, station=None, group=None, user=N
         station: station name (defaults to experiment name)
         group: group name (defaults to experiment name)
         user: user name (default is username from certificate)
-        snapshotid: snapshot id (default None)
+        snapshot_id: snapshot id (default None)
     """
 
-    if bool(defname) + bool(snapshotid) != 1:
+    if bool(defname) + bool(snapshot_id) != 1:
         raise Error("Exactly one of definition name or snapshot id must be provided")
 
     if not station: station = samweb.get_station()
     if not group: group = samweb.group
     args = {'name':project, 'station':station, "group":group}
     if   defname: args["defname"] = defname
-    elif snapshotid: args["snapshotid"] = snapshotid
+    elif snapshot_id: args["snapshot_id"] = snapshot_id
     if user: args["username"] = user
     result = samweb.postURL('/startProject', args, secure=True)
     projecturl = result.text.strip()
@@ -43,7 +43,7 @@ def startProject(samweb, project, defname=None, station=None, group=None, user=N
     # could look up definition name/snapshot id instead
     rval = {'project':project,'projectURL':projecturl}
     if defname: rval["definition_name"] = defname
-    elif snapshotid: rval["snapshot_id"] = snapshotid
+    elif snapshot_id: rval["snapshot_id"] = snapshot_id
     return rval
 
 @samweb_method
