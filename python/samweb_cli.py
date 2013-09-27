@@ -62,7 +62,7 @@ class listFilesCmd(CmdBase):
             print _file_list_summary_str(summary)
         else:
             fileinfo = options.fileinfo
-            for l in _file_list_str_gen(self.samweb.listFiles(dims,fileinfo=fileinfo), fileinfo):
+            for l in _file_list_str_gen(self.samweb.listFiles(dims,fileinfo=fileinfo, stream=True), fileinfo):
                 print l
 
 class countFilesCmd(CmdBase):
@@ -262,7 +262,7 @@ class listDefinitionsCmd(CmdBase):
             args['after'] = options.after
         if options.before:
             args['before'] = options.before
-        for l in self.samweb.listDefinitions(**args):
+        for l in self.samweb.listDefinitions(stream=True, **args):
             print l
 
 class descDefinitionCmd(CmdBase):

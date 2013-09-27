@@ -23,12 +23,15 @@ def _make_file_info(lines):
                 raise Error("Error while decoding file list output from server")
 
 @samweb_method
-def listFiles(samweb, dimensions=None, defname=None, fileinfo=False):
+def listFiles(samweb, dimensions=None, defname=None, fileinfo=False, stream=False):
     """ list files matching either a dataset definition or a dimensions string
     arguments:
       dimensions: string (default None)
       defname: string definition name (default None)
       fileinfo: boolean; if True, return file_id, file_size, event_count 
+      stream: boolean: if True the return value will be a generator and the results will
+                       be progressively returned to the client. Note that this keeps the network connection open until
+                       all the response has been read. (default False)
     
     returns:
       a generator producing file names (note that the network connection may not be closed
@@ -53,9 +56,11 @@ def listFiles(samweb, dimensions=None, defname=None, fileinfo=False):
             method = samweb.getURL
         result = method('/files/list', **kwargs)
     if fileinfo:
-        return _make_file_info(result.iter_lines())
+        output = _make_file_info(result.iter_lines())
     else:
-        return ifilter( None, (l.strip() for l in result.iter_lines()) )
+        output = ifilter( None, (l.strip() for l in result.iter_lines()) )
+    if stream: return output
+    else: return list(output)
 
 @samweb_method
 def listFilesSummary(samweb, dimensions=None, defname=None):

@@ -8,15 +8,18 @@ from samweb_client.exceptions import *
 from itertools import ifilter
 
 @samweb_method
-def listDefinitions(samweb, **queryCriteria):
+def listDefinitions(samweb, stream=False, **queryCriteria):
     """ List definitions matching given query parameters:
     arguments:
         one or more key=string value pairs to pass to server
+        stream: boolean: if True, the results will be returned progressively
     """
     params = dict(queryCriteria)
     params['format'] = 'plain'
     result = samweb.getURL('/definitions/list', params, stream=True)
-    return ifilter( None, (l.strip() for l in result.iter_lines()) )
+    output = ifilter( None, (l.strip() for l in result.iter_lines()) )
+    if stream: return output
+    else: return list(output)
 
 def _descDefinitionURL(defname):
     return '/definitions/name/' + defname + '/describe'
