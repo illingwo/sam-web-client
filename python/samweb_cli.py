@@ -264,6 +264,8 @@ class listDefinitionsCmd(CmdBase):
     cmdgroup = 'definitions'
 
     def run(self, options, args):
+        if len(args) > 0:
+            raise CmdError("Invalid arguments")
         args = {}
         if options.defname:
             args['defname'] = options.defname
@@ -360,6 +362,23 @@ class takeSnapshotCmd(CmdBase):
         snap_id = self.samweb.takeSnapshot(args[0], group=options.group)
         print snap_id
 
+class listProjectCmd(CmdBase):
+    name = "list-projects"
+    description = "List projects by various query parameters"
+    options = ['name=','user=','group=','defname=','snapshot_id=', 'started_before=','started_after=','ended_before=','ended_after=',]
+    cmdgroups = 'projects'
+
+    def run(self, options, args):
+        if len(args) > 0:
+            raise CmdError("Invalid arguments")
+        queryargs = {}
+        for o in self.options:
+            paramname = o[:-1]
+            value = getattr(options, paramname)
+            if value: queryargs[paramname] = value
+
+        for l in self.samweb.listProjects(stream=True, **queryargs):
+            print l
 
 class startProjectCmd(CmdBase):
     name = "start-project"

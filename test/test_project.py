@@ -14,5 +14,17 @@ class TestStartProject(testbase.SamdevTest):
         self.assertRaises(samweb_client.exceptions.Error, self.samweb.startProject, projectname)
         self.assertRaises(samweb_client.exceptions.Error, self.samweb.startProject, projectname, defname=defname, snapshot_id=10)
 
+class TestMinervaProject(testbase.MinervaDevTest):
+    def test_listProjects(self):
+        projects = self.samweb.listProjects(user='sam')
+        assert (len(projects) > 1)
+
+class TestProjectCommands(testbase.SAMWebCmdTest):
+
+    def test_listProjects(self):
+        cmdline = '-e minerva/dev list-projects --user=sam --defname=%'
+        self.check_cmd_return(cmdline.split())
+        assert self.stdout
+
 if __name__ == '__main__':
     unittest.main()

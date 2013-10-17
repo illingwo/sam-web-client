@@ -5,6 +5,20 @@ from samweb_client.client import samweb_method
 from samweb_client.http_client import escape_url_path
 from exceptions import *
 
+from itertools import ifilter
+
+@samweb_method
+def listProjects(samweb, stream=False, **queryCriteria):
+    """ List projects matching query parameters
+        keyword arguments: passed as parameters to server
+    """
+    params = dict(queryCriteria)
+    params['format'] = 'plain'
+    result = samweb.getURL('/projects', params, stream=True)
+    output = ifilter( None, (l.strip() for l in result.iter_lines()) )
+    if stream: return output
+    else: return list(output)
+
 @samweb_method
 def makeProjectName(samweb, description):
     """ Make a suitable project name from the provided string """
