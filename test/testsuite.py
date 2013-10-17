@@ -2,7 +2,7 @@
 
 import unittest
 
-testmodules = ['test_metadata', 'test_admin', 'test_definition', 'test_project']
+testmodules = ['test_files', 'test_metadata', 'test_admin', 'test_definition', 'test_project']
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()

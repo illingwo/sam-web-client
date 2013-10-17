@@ -29,6 +29,15 @@ class serverInfoCmd(CmdBase):
     def run(self, options, args):
         print self.samweb.serverInfo()
 
+def _help_dimensions(samweb):
+    """ helper to display the available dimensions """
+    maxlen = 1
+    dims = samweb.getAvailableDimensions()
+    for dim, desc in dims:
+        maxlen = max(len(dim), maxlen)
+    for dim, desc in dims:
+        print '%-*s %s' % (maxlen, dim, desc)
+
 def _file_list_summary_str(summary):
     return "File count:\t%(file_count)s\nTotal size:\t%(total_file_size)s\nEvent count:\t%(total_event_count)s" % summary
 
@@ -45,6 +54,7 @@ class listFilesCmd(CmdBase):
     options = [ ("parse-only", "Return parser output for these dimensions instead of evaluating them"),
                 ("fileinfo", "Return additional information for each file"),
                 ("summary", "Return a summary of the results instead of the full list"),
+                ("help-dimensions", "Return information on the available dimensions"),
                 ]
 
     description = "List files by dimensions query"
@@ -52,6 +62,9 @@ class listFilesCmd(CmdBase):
     args = "<dimensions query>"
 
     def run(self, options, args):
+        if options.help_dimensions:
+            _help_dimensions(self.samweb)
+            return
         dims = (' '.join(args)).strip()
         if not dims:
             raise CmdError("No dimensions specified")
@@ -307,10 +320,13 @@ class createDefinitionCmd(CmdBase):
     name = "create-definition"
     description = "Create a new dataset definition"
     args = "<new definition name> <dimensions>"
-    options = [ "user=", "group=", "description=" ]
+    options = [ "user=", "group=", "description=", ("help-dimensions", "Return information on the available dimensions"),]
     cmdgroup = 'definitions'
 
     def run(self, options, args):
+        if options.help_dimensions:
+            _help_dimensions(self.samweb)
+            return
         try:
             defname = args[0]
         except IndexError:

@@ -23,6 +23,12 @@ def _make_file_info(lines):
                 raise Error("Error while decoding file list output from server")
 
 @samweb_method
+def getAvailableDimensions(samweb):
+    """ List the available dimensions """
+    result = samweb.getURL('/files/list/dimensions?format=json&descriptions=1')
+    return convert_from_unicode(result.json())
+
+@samweb_method
 def listFiles(samweb, dimensions=None, defname=None, fileinfo=False, stream=False):
     """ list files matching either a dataset definition or a dimensions string
     arguments:

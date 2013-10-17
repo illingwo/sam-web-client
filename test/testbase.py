@@ -62,6 +62,11 @@ class SAMWebCmdTest(unittest.TestCase):
             self.restore_output()
 
     def check_cmd_return(self, cmdline):
-        rval = self.run_cmd(cmdline)
+        try:
+            rval = self.run_cmd(cmdline)
+        except SystemExit as ex:
+            print self.stdout
+            print self.stderr
+            rval = ex
         assert rval is None or rval == 0
 
