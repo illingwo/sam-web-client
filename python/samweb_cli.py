@@ -892,6 +892,9 @@ def main(args=None):
 
     try:
         return command.run(cmdoptions, args)
+    except ExperimentNotDefined:
+        print>>sys.stderr, "Experiment name is not defined. Use -e/--experiment command line option or set SAM_EXPERIMENT environment variable."
+        return 3
     except CmdError, ex:
         print>>sys.stderr, str(ex)
         parser.print_help()

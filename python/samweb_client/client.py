@@ -4,6 +4,8 @@ import http_client
 
 import os, pwd
 
+class ExperimentNotDefined(samweb_client.Error): pass
+
 class SAMWebClient(object):
     _experiment = os.environ.get('SAM_EXPERIMENT')
     _baseurl = os.environ.get('SAM_WEB_BASE_URL')
@@ -21,7 +23,7 @@ class SAMWebClient(object):
 
     def get_experiment(self):
         if self._experiment is None:
-            raise samweb_client.Error("Experiment is not defined")
+            raise ExperimentNotDefined("Experiment is not defined")
         return self._experiment
 
     def set_experiment(self, experiment):
