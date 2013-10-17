@@ -2,6 +2,11 @@ import unittest
 import sys,os
 import cStringIO
 
+# drop some things from the environment
+for e in ('SAM_GROUP', 'SAM_EXPERIMENT', 'SAM_WEB_BASE_URL', 'SAM_WEB_SSL_BASE_URL'):
+    try: del os.environ[e]
+    except KeyError: pass
+
 # fix up path to find the code
 ourpath = sys.path[0]
 sys.path.insert(0, os.path.normpath(os.path.join(ourpath, '../python')))
