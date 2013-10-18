@@ -591,6 +591,8 @@ If a single argument is provided, list all the values for that parameter name.""
         elif len(args) == 1:
             for v in self.samweb.listParameterValues(args[0]):
                 print v
+        else:
+            raise CmdError("Command takes either zero or one arguments")
 
 class addParameterCmd(CmdBase):
     name = 'add-parameter'
