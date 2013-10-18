@@ -96,6 +96,15 @@ def listParameters(samweb):
     return convert_from_unicode(samweb.getURL('/values/parameters').json())
 
 @samweb_method
+def listParameterValues(samweb, param):
+    """ list the values for the given parameter
+    arguments:
+        param: parameter name
+    """
+    result = samweb.getURL('/values/parameters/%s?format=json' % escape_url_path(param))
+    return convert_from_unicode(result.json())
+
+@samweb_method
 def addParameter(samweb, name, data_type, category=None):
     """ Add a new parameter to the database
     arguments:

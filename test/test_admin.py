@@ -8,11 +8,18 @@ class AdminTest(testbase.SamdevTest):
     def test_list_parameters(self):
         self.samweb.listParameters() 
 
+    def test_list_param_values(self):
+        vals = self.samweb.listParameterValues('Quality.MINERvA')
+        vals = self.samweb.listParameterValues('GLOBAL.true_floatval')
+        vals = self.samweb.listParameterValues('GLOBAL.true_intval')
+        self.assertRaises(samweb_client.exceptions.HTTPNotFound,
+                self.samweb.listParameterValues,'this_parameter.does_not_exist')
+
     def test_listValues(self):
         values = self.samweb.listValues('data_tiers')
         assert 'raw' in (v['data_tier'] for v in values)
 
-class AdminTest(testbase.MinervaDevTest):
+class MinervaAdminTest(testbase.MinervaDevTest):
 
     def test_add_parameter(self):
         self.assertRaises(samweb_client.exceptions.HTTPConflict, self.samweb.addParameter, 'Offline.tag','string')
@@ -31,6 +38,9 @@ class TestAdminCommands(testbase.SAMWebCmdTest):
         cmdline = '-e samdev list-parameters'
         self.check_cmd_return(cmdline)
         assert 'Offline.tag (string)' in self.stdout
+
+        cmdline = '-e samdev list-parameters GLOBAL.true_floatval'
+        self.check_cmd_return(cmdline)
 
     def test_addParameterCmd(self):
         cmdline = '-e minerva/dev add-parameter Offline.tag string'

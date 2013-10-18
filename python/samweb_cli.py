@@ -574,17 +574,23 @@ class setProcessStatusCmd(CmdBase):
 
 class listParametersCmd(CmdBase):
     name = 'list-parameters'
-    description = "List defined parameters"
+    description = """With no arguments, list the defined parameters.
+If a single argument is provided, list all the values for that parameter name."""
     cmdgroup = 'admin'
+    args = "[category.name]"
 
     def run(self, options, args):
 
-        for p in self.samweb.listParameters():
-            if isinstance(p, basestring): line = p
-            elif isinstance(p, dict):
-                line = "%(name)s\t%(data_type)s" % p
-            else: line = str(p)
-            print line
+        if not args:
+            for p in self.samweb.listParameters():
+                if isinstance(p, basestring): line = p
+                elif isinstance(p, dict):
+                    line = "%(name)s\t%(data_type)s" % p
+                else: line = str(p)
+                print line
+        elif len(args) == 1:
+            for v in self.samweb.listParameterValues(args[0]):
+                print v
 
 class addParameterCmd(CmdBase):
     name = 'add-parameter'
