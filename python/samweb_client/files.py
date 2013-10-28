@@ -29,6 +29,21 @@ def getAvailableDimensions(samweb):
     return convert_from_unicode(result.json())
 
 @samweb_method
+def _callDimensions(samweb, url, dimensions, params=None,stream=False):
+    """ Call the requested method with a dimensions string, 
+    automatically switching from GET to POST as needed """
+    if params is None: params = {}
+    else: params = params.copy()
+    kwargs = {'params':params, 'stream':stream}
+    if len(dimensions) > 1024:
+        kwargs['data'] = {'dims':dimensions}
+        method = samweb.postURL
+    else:
+        params['dims'] = dimensions
+        method = samweb.getURL
+    return method(url, **kwargs)
+
+@samweb_method
 def listFiles(samweb, dimensions=None, defname=None, fileinfo=False, stream=False):
     """ list files matching either a dataset definition or a dimensions string
     arguments:
@@ -50,17 +65,10 @@ def listFiles(samweb, dimensions=None, defname=None, fileinfo=False, stream=Fals
     params = {'format':'plain'}
     if fileinfo:
         params['fileinfo'] = 1
-    kwargs = { 'params' : params, 'stream':True }
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/list' % escape_url_path(defname), **kwargs)
+        result = samweb.getURL('/definitions/name/%s/files/list' % escape_url_path(defname), params=params,stream=True)
     else:
-        if len(dimensions) > 1024:
-            kwargs['data'] = {'dims':dimensions}
-            method = samweb.postURL
-        else:
-            params['dims'] = dimensions
-            method = samweb.getURL
-        result = method('/files/list', **kwargs)
+        result = samweb._callDimensions('/files/list', dimensions, params, stream=True)
     if fileinfo:
         output = _make_file_info(result.iter_lines())
     else:
@@ -77,29 +85,14 @@ def listFilesSummary(samweb, dimensions=None, defname=None):
     if defname is not None:
         result = samweb.getURL('/definitions/name/%s/files/summary' % escape_url_path(defname))
     else:
-        params = {}
-        kwargs = {'params' : params }
-        if len(dimensions) > 1024:
-            kwargs['data'] = {'dims':dimensions}
-            method = samweb.postURL
-        else:
-            params.update({'dims':dimensions})
-            method = samweb.getURL
-        result = samweb.getURL('/files/summary', **kwargs)
+        result = samweb._callDimensions('/files/summary', dimensions)
     return result.json()
 
 @samweb_method
 def parseDims(samweb, dimensions):
     """ For debugging only """
     params = { "parse_only": "1"}
-    kwargs = {'params' : params }
-    if len(dimensions) > 1024:
-        kwargs['data'] = {'dims':dimensions}
-        method = samweb.postURL
-    else:
-        params.update({'dims':dimensions})
-        method = samweb.getURL
-    result = method('/files/list', **kwargs)
+    result = samweb._callDimensions('/files/list', dimensions, params)
     return result.text.rstrip()
 
 @samweb_method
@@ -111,15 +104,7 @@ def countFiles(samweb, dimensions=None, defname=None):
     if defname is not None:
         result = samweb.getURL('/definitions/name/%s/files/count' % defname)
     else:
-        params = {}
-        kwargs = {'params' : params }
-        if len(dimensions) > 1024:
-            kwargs['data'] = {'dims':dimensions}
-            method = samweb.postURL
-        else:
-            params.update({'dims':dimensions})
-            method = samweb.getURL
-        result = method('/files/count', **kwargs)
+        result = samweb._callDimensions('/files/count', dimensions)
     return long(result.text.strip())
 
 def _make_file_path(filenameorid):
