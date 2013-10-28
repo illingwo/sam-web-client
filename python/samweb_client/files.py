@@ -119,7 +119,7 @@ def countFiles(samweb, dimensions=None, defname=None):
         else:
             params.update({'dims':dimensions})
             method = samweb.getURL
-        result = samweb.getURL('/files/count', **kwargs)
+        result = method('/files/count', **kwargs)
     return long(result.text.strip())
 
 def _make_file_path(filenameorid):
