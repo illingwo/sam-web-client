@@ -22,6 +22,8 @@ class Error(Exception):
 class NoMoreFiles(Exception):
   pass
 
+class Timeout(Exception): pass
+
 class SAMWebConnectionError(Error):
     """ Connection failure """
     pass
