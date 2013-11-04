@@ -99,11 +99,11 @@ def makeProcessUrl(samweb, projecturl, processid):
     return projecturl + '/process/' + str(processid)
 
 @samweb_method
-def getNextFile(samweb, processurl, timeout=3600):
+def getNextFile(samweb, processurl, timeout=None):
     """ get the next file from the project
     arguments:
         processurl: the process url
-        timeout: timeout after not obtaining a file in this many seconds. -1 to disable; 0 to return immediately; default is 1 hour
+        timeout: timeout after not obtaining a file in this many seconds. -1 to disable; 0 to return immediately; default is None (disabled)
     """
     url = processurl + '/getNextFile'
     starttime = time.time()
@@ -118,10 +118,11 @@ def getNextFile(samweb, processurl, timeout=3600):
                 try:
                     retry_interval = int(retry_after)
                 except ValueError: pass
-            if timeout == 0:
-                return None
-            elif timeout > 0 and time.time() - starttime > timeout:
-                raise Timeout('Timed out after %d seconds' % (time.time() - starttime))
+            if timeout is not None:
+                if timeout == 0:
+                    return None
+                elif timeout > 0 and time.time() - starttime > timeout:
+                    raise Timeout('Timed out after %d seconds' % (time.time() - starttime))
             time.sleep(retry_interval)
         elif code == 204:
             raise NoMoreFiles()

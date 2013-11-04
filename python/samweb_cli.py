@@ -521,13 +521,16 @@ class ProcessCmd(CmdBase):
 class getNextFileCmd(ProcessCmd):
     name = "get-next-file"
     description = "Get the next file from a process"
-    options = [ ("timeout=int", "Timeout in seconds waiting for file. -1 to disable it; 0 to return immediately if no file")  ]
+    options = [ ("timeout=int", "Timeout in seconds waiting for file. -1 to disable it; 0 to return immediately if no file. The default is 1 hour")  ]
     
     def run(self, options, args):
         processurl = self.makeProcessUrl(args)
         kwargs = {}
         if options.timeout is not None:
-            kwargs['timeout'] = options.timeout
+            if options.timeout < 0: kwargs['timeout'] = None
+            else: kwargs['timeout'] = options.timeout
+        else:
+            kwargs['timeout'] = 3600
         try:
             rval = self.samweb.getNextFile(processurl, **kwargs)
             if not rval:
