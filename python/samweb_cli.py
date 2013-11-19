@@ -366,7 +366,7 @@ class listProjectCmd(CmdBase):
     name = "list-projects"
     description = "List projects by various query parameters"
     options = ['name=','user=','group=','defname=','snapshot_id=', 'started_before=','started_after=','ended_before=','ended_after=',]
-    cmdgroups = 'projects'
+    cmdgroup = 'projects'
 
     def run(self, options, args):
         if len(args) > 0:
