@@ -558,7 +558,16 @@ class releaseFileCmd(ProcessCmd):
         #    raise CmdError("Must specify filename")
         status = options.status
         if not status: status = 'ok'
-        self.samweb.releaseFile(processurl, filename)
+        self.samweb.releaseFile(processurl, filename, status)
+
+class stopProcessCmd(ProcessCmd):
+    name = 'stop-process'
+    description = "End an existing process"
+    args = "(<process url> | <project url> <process id>)"
+
+    def run(self, options, args):
+        processurl = self.makeProcessUrl(args)
+        self.samweb.stopProcess(processurl)
 
 class setProcessStatusCmd(CmdBase):
     name = 'set-process-status'

@@ -142,6 +142,11 @@ def releaseFile(samweb, processurl, filename, status="ok"):
     return samweb.postURL(processurl + '/releaseFile', args).text.rstrip()
 
 @samweb_method
+def stopProcess(samweb, processurl):
+    """ End an existing process """
+    samweb.postURL(processurl + '/endProcess')
+
+@samweb_method
 def stopProject(samweb, projecturl):
     if not '://' in projecturl:
         projecturl = samweb.findProject(projecturl)
