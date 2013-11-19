@@ -394,7 +394,7 @@ class startProjectCmd(CmdBase):
             project = args[0]
         except IndexError:
             project = self.samweb.makeProjectName(defname)
-        rval = self.samweb.startProject(project, defname=defname, snapshotid=snapshotid, station=options.station, group=options.group)
+        rval = self.samweb.startProject(project, defname=defname, snapshot_id=snapshotid, station=options.station, group=options.group)
         print rval["projectURL"]
 
 class ProjectCmdBase(CmdBase):
