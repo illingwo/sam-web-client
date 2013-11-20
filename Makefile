@@ -7,8 +7,8 @@ version:
 	echo "version='$(shell git describe --tags --dirty)'" > python/samweb_client/_version.py
 
 .PHONY : pyc
-pyc:
-	python -m compileall python/
+pyc: clean
+	/usr/bin/python -m compileall python/
 
 .PHONY : dist
 dist: all
@@ -19,3 +19,8 @@ dist: all
 .PHONY: test
 test:
 	@test/testsuite.py
+
+.PHONY: clean
+clean:
+	find python -name "*.pyc" | xargs -r rm
+	rm -f dist.tar.gz
