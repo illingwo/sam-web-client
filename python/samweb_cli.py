@@ -383,18 +383,18 @@ class listProjectCmd(CmdBase):
 class startProjectCmd(CmdBase):
     name = "start-project"
     description = "Start a new project"
-    options = [ "defname=", "snapshotid=int", "group=", "station=" ]
+    options = [ "defname=", "snapshot_id=int", "group=", "station=" ]
     args = "[project name]"
     cmdgroup = 'projects'
 
     def run(self, options, args):
         defname = options.defname
-        snapshotid = options.snapshotid
+        snapshot_id = options.snapshot_id
         try:
             project = args[0]
         except IndexError:
             project = self.samweb.makeProjectName(defname)
-        rval = self.samweb.startProject(project, defname=defname, snapshot_id=snapshotid, station=options.station, group=options.group)
+        rval = self.samweb.startProject(project, defname=defname, snapshot_id=snapshot_id, station=options.station, group=options.group)
         print rval["projectURL"]
 
 class ProjectCmdBase(CmdBase):
