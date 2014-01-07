@@ -180,6 +180,12 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                     errmsg = str(x.reason)
                 if time.time() >= tmout:
                     raise ConnectionError(errmsg)
+            except httplib.HTTPException, x:
+                # I'm not sure exactly what circumstances cause this
+                # but assume that it's a retriable error
+                errmsg = str(x.reason)
+                if time.time() >= tmout:
+                    raise ConnectionError(errmsg)
 
             if self.verboseretries:
                 print>>sys.stderr, '%s: %s: retrying in %d s' %( url, errmsg, retryinterval)
