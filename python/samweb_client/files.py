@@ -86,7 +86,7 @@ def listFilesSummary(samweb, dimensions=None, defname=None):
         result = samweb.getURL('/definitions/name/%s/files/summary' % escape_url_path(defname))
     else:
         result = samweb._callDimensions('/files/summary', dimensions)
-    return result.json()
+    return convert_from_unicode(result.json())
 
 @samweb_method
 def parseDims(samweb, dimensions):
