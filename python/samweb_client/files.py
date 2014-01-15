@@ -188,7 +188,7 @@ def validateFileMetadata(samweb, md=None, mdfile=None):
     elif mdfile:
         data = mdfile.read()
     else:
-        raise Error('Must specify metadata dictionary or file object')
+        raise ArgumentError('Must specify metadata dictionary or file object')
     return samweb.postURL('/files/validate_metadata', data=data, content_type='application/json').text
 
 @samweb_method
@@ -203,7 +203,7 @@ def declareFile(samweb, md=None, mdfile=None):
     elif mdfile:
         data = mdfile.read()
     else:
-        raise Error('Must specify metadata dictionary or file object')
+        raise ArgumentError('Must specify metadata dictionary or file object')
     return samweb.postURL('/files', data=data, content_type='application/json', secure=True).text
 
 @samweb_method

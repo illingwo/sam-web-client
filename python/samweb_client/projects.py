@@ -40,7 +40,7 @@ def startProject(samweb, project, defname=None, station=None, group=None, user=N
     """
 
     if bool(defname) + bool(snapshot_id) != 1:
-        raise Error("Exactly one of definition name or snapshot id must be provided")
+        raise ArgumentError("Exactly one of definition name or snapshot id must be provided")
 
     if not station: station = samweb.get_station()
     if not group: group = samweb.group

@@ -19,6 +19,10 @@ Some more common Exceptions, like FileNotFound are always available
 class Error(Exception):
   pass
 
+class ArgumentError(Error):
+    """ For methods called with incorrect arguments """
+    pass
+
 class NoMoreFiles(Exception):
   pass
 

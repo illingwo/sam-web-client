@@ -921,8 +921,9 @@ def main(args=None):
     except ExperimentNotDefined:
         print>>sys.stderr, "Experiment name is not defined. Use -e/--experiment command line option or set SAM_EXPERIMENT environment variable."
         return 3
-    except CmdError, ex:
+    except (ArgumentError, CmdError), ex:
         print>>sys.stderr, str(ex)
+        print
         parser.print_help()
         return 2
     except Error, ex:

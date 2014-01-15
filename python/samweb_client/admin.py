@@ -45,7 +45,7 @@ def addUser(samweb, username, firstname=None, lastname=None, email=None, uid=Non
         try:
             uid = int(uid)
         except ValueError:
-            raise Error("Invalid value for uid: %s" % uid)
+            raise ArgumentError("Invalid value for uid: %s" % uid)
         else:
             userdata['uid'] = uid
     if groups:
