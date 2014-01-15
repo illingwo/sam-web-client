@@ -213,10 +213,16 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
         application=('runproject','runproject','1') ):
     """ Run a project
 
-    arguments:
+    arguments (use keyword arguments, all default to None):
         projectname: the name for the project
         defname: the defname to use
         snapshot_id: snapshot_id to use
+        callback: a single argument function invoked on each file
+        deliveryLocation
+        station
+        maxFiles
+        schemas
+        application: a three element sequence of (family, name, version)
     """
 
     if callback is None:
@@ -254,13 +260,15 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
         else: status = 'bad'
         samweb.releaseFile(processurl, newfile, status)
 
+    samweb.setProcessStatus('completed', processurl)
+
     samweb.stopProject(projecturl)
     print "Stopped project %s" % projectname
     return projectname
 
 @samweb_method
-def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, deliveryLocation=None):
-
+def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=None, deliveryLocation=None):
+    """ Prestage the given dataset. If the provided locations are WebDAV, it will try to read a couple of bytes from each file """
     def prestage(fileurl):
         if not fileurl.startswith('https'):
             print 'Not an https url: %s' % fileurl
@@ -279,5 +287,5 @@ def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, delivery
             return False
 
     samweb.runProject(defname=defname, snapshot_id=snapshot_id, schemas="https,file,gridftp",
-            application=('prestage','prestage','1'), callback=prestage, maxFiles=maxFiles, deliveryLocation=deliveryLocation)
+            application=('prestage','prestage','1'), callback=prestage, maxFiles=maxFiles, station=station, deliveryLocation=deliveryLocation)
 

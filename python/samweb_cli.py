@@ -590,11 +590,11 @@ class setProcessStatusCmd(CmdBase):
             raise CmdError("Invalid arguments")
         self.samweb.setProcessStatus(status, nameorurl, processid=processid, process_desc=process_description)
 
-class runProject(CmdBase):
+class runProjectCmd(CmdBase):
     name = 'run-project'
     description = """Run a project"""
     cmdgroup = 'projects'
-    options = ['defname=','snapshot_id=int','max-files=int',
+    options = ['defname=','snapshot_id=int','max-files=int', 'station=',
             ("schemas=", "Comma separated list of url schemas this process prefers to receive"),
             ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"), 
             ]
@@ -617,13 +617,13 @@ class runProject(CmdBase):
                     return False
 
         self.samweb.runProject(defname=options.defname, snapshot_id=options.snapshot_id, maxFiles=max_files,
-                callback=callback, schemas=options.schemas, deliveryLocation=options.delivery_location)
+                callback=callback, schemas=options.schemas, station=options.station, deliveryLocation=options.delivery_location)
 
-class prestageDataset(CmdBase):
+class prestageDatasetCmd(CmdBase):
     name = 'prestage-dataset'
     description = """Prestage a dataset"""
     cmdgroup = 'projects'
-    options = ['defname=','snapshot_id=int','max-files=int',
+    options = ['defname=','snapshot_id=int','max-files=int', 'station=',
             ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"),
             ]
 
@@ -632,7 +632,7 @@ class prestageDataset(CmdBase):
             max_files = options.max_files
         else: max_files=0
         self.samweb.prestageDataset(defname=options.defname,snapshot_id=options.snapshot_id,maxFiles=max_files,
-                deliveryLocation=options.delivery_location)
+                station=options.station, deliveryLocation=options.delivery_location)
 
 class listParametersCmd(CmdBase):
     name = 'list-parameters'
