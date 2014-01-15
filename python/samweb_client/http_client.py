@@ -52,7 +52,8 @@ class SAMWebHTTPClient(object):
             errmsg = "SSL error: %s" % msg
         return SAMWebSSLError(errmsg)
 
-    def get_standard_certificate_path(self):
+    @staticmethod
+    def get_standard_certificate_path():
         import os
         cert = os.environ.get('X509_USER_PROXY')
         if not cert:
@@ -65,6 +66,12 @@ class SAMWebHTTPClient(object):
             if os.path.exists(proxypath):
                 cert = proxypath
         return cert
+
+    def get_cert(self):
+        return self._cert
+
+    def get_ca_dir(self):
+        return os.environ.get('X509_CERT_DIR',"/etc/grid-security/certificates")
 
     def get_default_headers(self):
         #return a copy as the user may modify it

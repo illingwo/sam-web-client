@@ -590,6 +590,50 @@ class setProcessStatusCmd(CmdBase):
             raise CmdError("Invalid arguments")
         self.samweb.setProcessStatus(status, nameorurl, processid=processid, process_desc=process_description)
 
+class runProject(CmdBase):
+    name = 'run-project'
+    description = """Run a project"""
+    cmdgroup = 'projects'
+    options = ['defname=','snapshot_id=int','max-files=int',
+            ("schemas=", "Comma separated list of url schemas this process prefers to receive"),
+            ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"), 
+            ]
+    args = '<command to run (%fileurl will be replaced by file url)>'
+    def run(self, options, args):
+        if options.max_files:
+            max_files = options.max_files
+        else: max_files=0
+        callback = None
+        if args:
+            cmd = ' '.join(args)
+            def callback(fileurl):
+                import subprocess
+                realcmd = cmd.replace('%fileurl', fileurl)
+                try:
+                    rval = subprocess.call(realcmd,shell=True)
+                    return (rval==0)
+                except Exception, ex:
+                    print ex
+                    return False
+
+        self.samweb.runProject(defname=options.defname, snapshot_id=options.snapshot_id, maxFiles=max_files,
+                callback=callback, schemas=options.schemas, deliveryLocation=options.delivery_location)
+
+class prestageDataset(CmdBase):
+    name = 'prestage-dataset'
+    description = """Prestage a dataset"""
+    cmdgroup = 'projects'
+    options = ['defname=','snapshot_id=int','max-files=int',
+            ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"),
+            ]
+
+    def run(self, options, args):
+        if options.max_files:
+            max_files = options.max_files
+        else: max_files=0
+        self.samweb.prestageDataset(defname=options.defname,snapshot_id=options.snapshot_id,maxFiles=max_files,
+                deliveryLocation=options.delivery_location)
+
 class listParametersCmd(CmdBase):
     name = 'list-parameters'
     description = """With no arguments, list the defined parameters.

@@ -207,3 +207,77 @@ def setProcessStatus(samweb, status, projectnameorurl, processid=None, process_d
 
     return samweb.putURL(url + "/status", args, secure=True).text.rstrip()
 
+@samweb_method
+def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callback=None,
+        deliveryLocation=None, station=None, maxFiles=0, schemas=None,
+        application=('runproject','runproject','1') ):
+    """ Run a project
+
+    arguments:
+        projectname: the name for the project
+        defname: the defname to use
+        snapshot_id: snapshot_id to use
+    """
+
+    if callback is None:
+        def _print(fileurl):
+            print fileurl
+        callback = _print
+    if not projectname:
+        if defname:
+            projectname = samweb.makeProjectName(defname)
+        elif snapshot_id:
+            projectname = samweb.makeProjectName('snapshot_id_%d' % snapshot_id)
+
+    project = samweb.startProject(projectname, defname=defname, snapshot_id=snapshot_id, station=station)
+    print "Started project %s" % projectname
+
+    projecturl = project['projectURL']
+    process_description = ""
+    appFamily, appName, appVersion = application
+    cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, description=process_description, maxFiles=maxFiles, schemas=schemas)
+    print "Started consumer processs ID %s" % cpid
+
+    processurl = samweb.makeProcessUrl(projecturl, cpid)
+
+    while True:
+        try:
+            newfile = samweb.getNextFile(processurl)['url']
+            try:
+                rval = callback(newfile)
+            except Exception, ex:
+                print ex
+                rval = 1
+        except NoMoreFiles:
+            break
+        if rval: status = 'ok'
+        else: status = 'bad'
+        samweb.releaseFile(processurl, newfile, status)
+
+    samweb.stopProject(projecturl)
+    print "Stopped project %s" % projectname
+    return projectname
+
+@samweb_method
+def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, deliveryLocation=None):
+
+    def prestage(fileurl):
+        if not fileurl.startswith('https'):
+            print 'Not an https url: %s' % fileurl
+            return False
+        print "Got file url: %s" % fileurl
+        print "Will execute:"
+        cmd = ["curl", "-s", "-o", "/dev/null", "-L", "-r", "0-1", "--tlsv1", "--capath", samweb.http_client.get_ca_dir() , "--cert", samweb.http_client.get_cert(), fileurl]
+        print ' '.join(cmd)
+        import subprocess
+        rval = subprocess.call(cmd,stdout=None)
+        if rval == 0:
+            print "File %s is staged" % os.path.basename(fileurl)
+            return True
+        else:
+            print "Failed to access file %s" % fileurl
+            return False
+
+    samweb.runProject(defname=defname, snapshot_id=snapshot_id, schemas="https,file,gridftp",
+            application=('prestage','prestage','1'), callback=prestage, maxFiles=maxFiles, deliveryLocation=deliveryLocation)
+
