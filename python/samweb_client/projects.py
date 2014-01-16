@@ -210,7 +210,7 @@ def setProcessStatus(samweb, status, projectnameorurl, processid=None, process_d
 @samweb_method
 def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callback=None,
         deliveryLocation=None, station=None, maxFiles=0, schemas=None,
-        application=('runproject','runproject','1') ):
+        application=('runproject','runproject','1'), nparallel=1, quiet=False ):
     """ Run a project
 
     arguments (use keyword arguments, all default to None):
@@ -223,6 +223,8 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
         maxFiles
         schemas
         application: a three element sequence of (family, name, version)
+        nparallel: number of processes to run in parallel
+        quiet: If true, suppress normal output
     """
 
     if callback is None:
@@ -234,58 +236,93 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
             projectname = samweb.makeProjectName(defname)
         elif snapshot_id:
             projectname = samweb.makeProjectName('snapshot_id_%d' % snapshot_id)
+    if quiet:
+        def write(s): pass
+    else:
+        import sys
+        write=sys.stdout.write
 
     project = samweb.startProject(projectname, defname=defname, snapshot_id=snapshot_id, station=station)
-    print "Started project %s" % projectname
+    write("Started project %s\n" % projectname)
 
     projecturl = project['projectURL']
     process_description = ""
     appFamily, appName, appVersion = application
-    cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, description=process_description, maxFiles=maxFiles, schemas=schemas)
-    print "Started consumer processs ID %s" % cpid
 
-    processurl = samweb.makeProcessUrl(projecturl, cpid)
+    if nparallel is None or nparallel < 2:
+        nparallel=1
+    if nparallel > 1:
+        import threading
+        maxFiles=(maxFiles+nparallel-1)//nparallel
 
-    while True:
-        try:
-            newfile = samweb.getNextFile(processurl)['url']
+
+    def runProcess():
+        cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, description=process_description, maxFiles=maxFiles, schemas=schemas)
+        if nparallel > 1: 
+            prefix = '%s: ' % threading.currentThread().getName()
+        else: prefix=''
+        write("%sStarted consumer processs ID %s\n" % (prefix,cpid))
+
+        processurl = samweb.makeProcessUrl(projecturl, cpid)
+
+        while True:
             try:
-                rval = callback(newfile)
-            except Exception, ex:
-                print ex
-                rval = 1
-        except NoMoreFiles:
-            break
-        if rval: status = 'ok'
-        else: status = 'bad'
-        samweb.releaseFile(processurl, newfile, status)
+                newfile = samweb.getNextFile(processurl)['url']
+                try:
+                    rval = callback(newfile)
+                except Exception, ex:
+                    write('%s%s\n' % (prefix,ex))
+                    rval = 1
+            except NoMoreFiles:
+                break
+            if rval: status = 'ok'
+            else: status = 'bad'
+            samweb.releaseFile(processurl, newfile, status)
 
-    samweb.setProcessStatus('completed', processurl)
+        samweb.setProcessStatus('completed', processurl)
+
+    if nparallel < 2:
+        runProcess()
+    else:
+        threads = []
+        for i in range(nparallel):
+            t = threading.Thread(target=runProcess, name='Thread-%02d' % (i+1,))
+            t.start()
+            threads.append(t)
+
+        for t in threads: t.join()
 
     samweb.stopProject(projecturl)
-    print "Stopped project %s" % projectname
+    write("Stopped project %s\n" % projectname)
     return projectname
 
 @samweb_method
-def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=None, deliveryLocation=None):
+def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=None, deliveryLocation=None, nparallel=1):
     """ Prestage the given dataset. If the provided locations are WebDAV, it will try to read a couple of bytes from each file """
+
+    if nparallel is None or nparallel < 2: nparallel = 1
+
     def prestage(fileurl):
+        if nparallel > 1:
+            import threading
+            prefix = '%s: ' % threading.currentThread().getName()
+        else:
+            prefix = ''
         if not fileurl.startswith('https'):
-            print 'Not an https url: %s' % fileurl
+            print '%sNot an https url: %s' % (prefix, fileurl)
             return False
-        print "Got file url: %s" % fileurl
-        print "Will execute:"
         cmd = ["curl", "-s", "-o", "/dev/null", "-L", "-r", "0-1", "--tlsv1", "--capath", samweb.http_client.get_ca_dir() , "--cert", samweb.http_client.get_cert(), fileurl]
-        print ' '.join(cmd)
+        print "%sGot file url: %s\n%sWill execute:\n%s%s" % (prefix, fileurl, prefix, prefix, ' '.join(cmd))
         import subprocess
         rval = subprocess.call(cmd,stdout=None)
         if rval == 0:
-            print "File %s is staged" % os.path.basename(fileurl)
+            print "%sFile %s is staged" % (prefix, os.path.basename(fileurl))
             return True
         else:
-            print "Failed to access file %s" % fileurl
+            print "%sFailed to access file %s" % (prefix,fileurl)
             return False
 
     samweb.runProject(defname=defname, snapshot_id=snapshot_id, schemas="https,file,gridftp",
-            application=('prestage','prestage','1'), callback=prestage, maxFiles=maxFiles, station=station, deliveryLocation=deliveryLocation)
+            application=('prestage','prestage','1'), callback=prestage, maxFiles=maxFiles,
+            station=station, deliveryLocation=deliveryLocation,nparallel=nparallel)
 

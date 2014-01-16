@@ -596,7 +596,9 @@ class runProjectCmd(CmdBase):
     cmdgroup = 'projects'
     options = ['defname=','snapshot_id=int','max-files=int', 'station=',
             ("schemas=", "Comma separated list of url schemas this process prefers to receive"),
+            ("parallel=int", "Number of parallel processes to run"),
             ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"), 
+            "quiet",
             ]
     args = '<command to run (%fileurl will be replaced by file url)>'
     def run(self, options, args):
@@ -617,13 +619,15 @@ class runProjectCmd(CmdBase):
                     return False
 
         self.samweb.runProject(defname=options.defname, snapshot_id=options.snapshot_id, maxFiles=max_files,
-                callback=callback, schemas=options.schemas, station=options.station, deliveryLocation=options.delivery_location)
+                callback=callback, schemas=options.schemas, station=options.station,
+                deliveryLocation=options.delivery_location, nparallel=options.parallel, quiet=options.quiet)
 
 class prestageDatasetCmd(CmdBase):
     name = 'prestage-dataset'
     description = """Prestage a dataset"""
     cmdgroup = 'projects'
     options = ['defname=','snapshot_id=int','max-files=int', 'station=',
+            ("parallel=int", "Number of parallel processes to run"),
             ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"),
             ]
 
@@ -632,7 +636,7 @@ class prestageDatasetCmd(CmdBase):
             max_files = options.max_files
         else: max_files=0
         self.samweb.prestageDataset(defname=options.defname,snapshot_id=options.snapshot_id,maxFiles=max_files,
-                station=options.station, deliveryLocation=options.delivery_location)
+                station=options.station, deliveryLocation=options.delivery_location,nparallel=options.parallel)
 
 class listParametersCmd(CmdBase):
     name = 'list-parameters'
