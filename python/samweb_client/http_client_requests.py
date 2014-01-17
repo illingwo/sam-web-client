@@ -63,25 +63,30 @@ class RequestsHTTPClient(SAMWebHTTPClient):
                         errmsg = jsonerr['message']
                         errtype = jsonerr['error']
                     else:
-                        errmsg = response.text.rstrip()
+                        if response.status_code > 500:
+                            errmsg = "HTTP error: %d %s" % (response.status_code, response.reason)
+                        else:
+                            errmsg = response.text.rstrip()
                         errtype = None
                     exc = makeHTTPError(response.request.method, url, response.status_code, errmsg, errtype)
                     if 400 <= response.status_code <= 500:
                         # For any 400 error + 500 errors, don't bother retrying
                         raise exc
             except requests.exceptions.SSLError, ex:
-                msg = str(ex.message)
-                raise self.make_ssl_error(msg)
+                errmsg = str(ex.message)
+                raise self.make_ssl_error(errmsg)
             except requests.exceptions.Timeout, ex:
-                exc = SAMWebConnectionError("%s: Timed out waiting for response" % (url,))
+                errmsg = "%s: Timed out waiting for response" % (url,)
+                exc = SAMWebConnectionError(errmsg)
             except requests.exceptions.ConnectionError, ex:
-                exc = SAMWebConnectionError("%s: %s" % (url, str(ex)))
+                errmsg = "%s: %s" % (url, str(ex))
+                exc = SAMWebConnectionError(errmsg)
             
             if time.time() >= tmout:
                 raise exc
                 
             if self.verboseretries:
-                print '%s: retrying in %d s' %( str(exc), retryinterval)
+                print '%s: retrying in %d s' %( errmsg, retryinterval)
             time.sleep(retryinterval)
             retryinterval*=2
             if retryinterval > self.maxretryinterval:

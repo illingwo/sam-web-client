@@ -165,7 +165,10 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                     errmsg = err['message']
                     errtype = err['error']
                 else:
-                    errmsg = x.read().rstrip()
+                    if x.code > 500:
+                        errmsg = "HTTP error: %d %s" % (x.code, x.msg)
+                    else:
+                        errmsg = x.read().rstrip()
                     errtype = None
                 x.close() # ensure that the socket is closed (otherwise it may hang around in the traceback object)
                 # retry server errors (excluding internal errors)
@@ -188,7 +191,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                     raise ConnectionError(errmsg)
 
             if self.verboseretries:
-                print>>sys.stderr, '%s: %s: retrying in %d s' %( url, errmsg, retryinterval)
+                print>>sys.stderr, '%s: retrying in %d s' %( errmsg, retryinterval)
             time.sleep(retryinterval)
             retryinterval*=2
             if retryinterval > self.maxretryinterval:
