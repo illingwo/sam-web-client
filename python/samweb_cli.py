@@ -829,7 +829,7 @@ def main(args=None):
         args = sys.argv[1:]
 
     usage = "%prog [base options] <command> [command options] ..."
-    parser = optparse.OptionParser(usage=usage)
+    parser = optparse.OptionParser(usage=usage, version="%prog " + get_version())
     parser.disable_interspersed_args()
     parser.add_option('--help-commands', action="callback", callback=_list_commands, help="list available commands")
     base_options = optparse.OptionGroup(parser, "Base options")

@@ -95,21 +95,8 @@ class SAMWebHTTPClient(object):
         return self._doURL(url, method='DELETE',params=params, **kwargs)
 
     def _get_user_agent(self):
-        import sys
-        try:
-            from _version import version
-        except ImportError:
-            version = 'unknown'
-
-        # if running from a git checkout, try to obtain the version
-        gitdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../.git")
-        if os.path.exists(gitdir):
-            import subprocess
-            try:
-                p = subprocess.Popen(["git", "--work-tree=%s" % os.path.join(gitdir,".."), "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                if p.wait() == 0:
-                    version = p.stdout.read().strip()
-            except: pass
+        import samweb_client.client
+        version = samweb_client.client.get_version()
         return 'SAMWebClient/%s (%s) python/%s' % (version, os.path.basename(sys.argv[0] or sys.executable), '%d.%d.%d' % sys.version_info[:3])
 
 try:

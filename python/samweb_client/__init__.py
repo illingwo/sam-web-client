@@ -30,7 +30,7 @@ def convert_from_unicode(input):
 from exceptions import *
 
 import http_client
-from client import SAMWebClient, ExperimentNotDefined
+from client import SAMWebClient, ExperimentNotDefined, get_version
 import projects
 import files
 import definitions

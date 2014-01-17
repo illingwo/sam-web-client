@@ -6,6 +6,29 @@ import os, pwd
 
 class ExperimentNotDefined(samweb_client.Error): pass
 
+_version = None
+def get_version():
+    """ Get the version somehow """
+    global _version
+    if _version is None:
+
+        # first try the baked in value
+        try:
+            from _version import version
+        except ImportError:
+            _version = 'unknown'
+
+        # if running from a git checkout, try to obtain the version
+        gitdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../.git")
+        if os.path.exists(gitdir):
+            import subprocess
+            try:
+                p = subprocess.Popen(["git", "--work-tree=%s" % os.path.join(gitdir,".."), "--git-dir=%s" % gitdir, "describe", "--tags", "--dirty"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if p.wait() == 0:
+                    _version = p.stdout.read().strip()
+            except: pass
+    return _version
+
 class SAMWebClient(object):
     _experiment = os.environ.get('SAM_EXPERIMENT')
     _baseurl = os.environ.get('SAM_WEB_BASE_URL')
