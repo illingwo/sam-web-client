@@ -26,6 +26,9 @@ class ArgumentError(Error):
 class NoMoreFiles(Exception):
   pass
 
+class ArgumentError(Error):
+    """ For methods called with incorrect arguments """
+
 class Timeout(Exception): pass
 
 class SAMWebConnectionError(Error):

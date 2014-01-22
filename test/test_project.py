@@ -19,6 +19,10 @@ class TestMinervaProject(testbase.MinervaDevTest):
         projects = self.samweb.listProjects(user='sam')
         assert (len(projects) > 1)
 
+class TestSamdevProject(testbase.SamdevTest):
+    def test_runProject(self):
+        self.samweb.runProject(defname='test-project')
+
 class TestProjectCommands(testbase.SAMWebCmdTest):
 
     def test_listProjects(self):
