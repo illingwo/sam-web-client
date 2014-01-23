@@ -31,6 +31,14 @@ class MinervaAdminTest(testbase.MinervaDevTest):
     def test_addDataDisk(self):
         self.assertRaises(samweb_client.exceptions.HTTPConflict, self.samweb.addDataDisk, 'minerva_bluearc:/minerva/data')
 
+    def test_listUsers(self):
+        users = self.samweb.listUsers()
+        assert 'sam' in users
+
+    def test_userInfo(self):
+        info = self.samweb.describeUser('sam')
+        assert 'sam' == info["username"]
+
 class TestAdminCommands(testbase.SAMWebCmdTest):
 
     def test_listParametersCmd(self):

@@ -818,7 +818,13 @@ class modifyUserCmd(CmdBase):
     name = 'modify-user'
     description = "Modify user"
     cmdgroup = 'admin'
-    options = ( 'email=', 'groups=', 'addgroups=', 'status=' )
+    options = ( 'email=',
+            ('groups=', "Set the user's groups to this comma separated list"),
+            ('addgroups=', "Add the comma separated list of groups to the user"),
+            'status=',
+            ( "addgridsubject=", "A grid subject to add to the user"),
+            ( "removegridsubject=", "A grid subject to remove from the user"),
+            )
     args = "<username>"
     def run(self, options, args):
         try:
@@ -833,7 +839,12 @@ class modifyUserCmd(CmdBase):
             args['groups'] = options.groups.split(',')
         if options.addgroups:
             args['addgroups'] = options.addgroups.split(',')
+        if options.addgridsubject:
+            args["addgridsubject"] = options.addgridsubject
+        if options.removegridsubject:
+            args["removegridsubject"] = options.removegridsubject
         self.samweb.modifyUser(username, **args)
+        print "User '%s' has been updated" % username
 
 commands = {
        }
