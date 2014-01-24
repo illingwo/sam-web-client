@@ -403,7 +403,10 @@ class startProjectCmd(CmdBase):
         try:
             project = args[0]
         except IndexError:
-            project = self.samweb.makeProjectName(defname)
+            if defname or snapshot_id:
+                project = self.samweb.makeProjectName(defname or str(snapshot_id))
+            else:
+                raise CmdError("One of definition name or snapshot id must be provided")
         rval = self.samweb.startProject(project, defname=defname, snapshot_id=snapshot_id, station=options.station, group=options.group)
         print rval["projectURL"]
 
