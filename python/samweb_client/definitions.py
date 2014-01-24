@@ -71,7 +71,7 @@ def renameDefinition(samweb, defname, newname):
         new name for definition
 
     """
-    samweb.putURL('/definitions/name/%s' % escape_url_component(defname), {'defname':newname}, secure=True)
+    samweb.putURL('/definitions/name/%s' % escape_url_component(defname), {'defname':newname}, secure=True, role='*')
 
 @samweb_method
 def deleteDefinition(samweb, defname):

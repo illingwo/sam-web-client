@@ -10,7 +10,7 @@ def listApplications(samweb, **queryCriteria):
 
 @samweb_method
 def addApplication(samweb, family, name, version):
-    return samweb.postURL('/values/applications', {"family":family, "name":name, "version":version}, secure=True).text.rstrip()
+    return samweb.postURL('/values/applications', {"family":family, "name":name, "version":version}, secure=True, role='*').text.rstrip()
 
 @samweb_method
 def listUsers(samweb):
@@ -50,7 +50,7 @@ def addUser(samweb, username, firstname=None, lastname=None, email=None, uid=Non
             userdata['uid'] = uid
     if groups:
         userdata["groups"] = groups
-    return samweb.postURL('/users', data=json.dumps(userdata), content_type='application/json', secure=True).text.rstrip()
+    return samweb.postURL('/users', data=json.dumps(userdata), content_type='application/json', secure=True, role='*').text.rstrip()
 
 @samweb_method
 def modifyUser(samweb, username, **args):
@@ -86,7 +86,7 @@ def addValue(samweb, vtype, *args, **kwargs):
     postdata = dict(kwargs)
     if args: postdata["value"] = [str(i) for i in args]
     try:
-        return samweb.postURL('/values/%s' % escape_url_path(vtype), postdata, secure=True)
+        return samweb.postURL('/values/%s' % escape_url_path(vtype), postdata, secure=True, role='*')
     except HTTPNotFound, ex:
         raise Error("Unknown value type '%s'" % vtype)
 
@@ -113,7 +113,7 @@ def addParameter(samweb, name, data_type, category=None):
     """
     data = { 'name' : name, 'data_type' : data_type }
     if category: data['category'] = category
-    return samweb.postURL('/values/parameters', data, secure=True)
+    return samweb.postURL('/values/parameters', data, secure=True, role='*')
 
 @samweb_method
 def listDataDisks(samweb):
@@ -126,5 +126,5 @@ def addDataDisk(samweb, mount_point):
     arguments:
         mount_point: The mount point for the new disk
     """
-    return samweb.postURL('/values/data_disks', {'mountpoint': mount_point}, secure=True)
+    return samweb.postURL('/values/data_disks', {'mountpoint': mount_point}, secure=True, role='*')
 

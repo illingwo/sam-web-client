@@ -34,13 +34,16 @@ class RequestsHTTPClient(SAMWebHTTPClient):
             self._cert = self.get_standard_certificate_path()
         self._session = None # This will clear any existing session with a different cert
 
-    def _doURL(self, url, method="GET", content_type=None, *args, **kwargs):
+    def _doURL(self, url, method="GET", content_type=None, role=None, *args, **kwargs):
         headers = self.get_default_headers()
         if 'headers' in kwargs:
             headers.update(kwargs['headers'])
 
         if content_type is not None:
             headers['Content-Type'] = content_type
+
+        if role is not None:
+            headers['SAM-Role'] = str(role)
         
         kwargs['headers'] = headers
 

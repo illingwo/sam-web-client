@@ -134,7 +134,7 @@ def addFileLocation(samweb, filenameorid, location):
     """
     url = _make_file_path(filenameorid) + '/locations'
     data = { "add" : location }
-    return samweb.postURL(url, data=data, secure=True)
+    return samweb.postURL(url, data=data, secure=True, role='*')
 
 @samweb_method
 def removeFileLocation(samweb, filenameorid, location):
@@ -145,7 +145,7 @@ def removeFileLocation(samweb, filenameorid, location):
     """
     url = _make_file_path(filenameorid) + '/locations'
     data = { "remove" : location }
-    return samweb.postURL(url, data=data, secure=True)
+    return samweb.postURL(url, data=data, secure=True, role='*')
 
 @samweb_method
 def getMetadata(samweb, filenameorid):
@@ -219,7 +219,7 @@ def modifyFileMetadata(samweb, filename, md=None, mdfile=None):
     else:
         data = mdfile.read()
     url = _make_file_path(filename)
-    return samweb.putURL(url + "/metadata", data=data, content_type='application/json', secure=True).text
+    return samweb.putURL(url + "/metadata", data=data, content_type='application/json', secure=True, role='*').text
 
 @samweb_method
 def retireFile(samweb, filename):
@@ -228,5 +228,5 @@ def retireFile(samweb, filename):
         filename
     """
     url = _make_file_path(filename) + '/retired_date'
-    return samweb.postURL(url, secure=True).text
+    return samweb.postURL(url, secure=True, role='*').text
 
