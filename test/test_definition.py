@@ -36,7 +36,7 @@ class TestDefinitionMinerva(testbase.SamdevTest):
 
         defname2 = defname + '_2'
 
-        self.samweb.renameDefinition(defname,defname2)
+        self.samweb.modifyDefinition(defname,defname=defname2)
 
         d = self.samweb.descDefinitionDict(defname2)
         assert defname2 == d["defname"]

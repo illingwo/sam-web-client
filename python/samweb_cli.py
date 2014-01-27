@@ -339,15 +339,16 @@ class createDefinitionCmd(CmdBase):
         result = self.samweb.createDefinition(defname, dims, options.user, options.group, options.description)
         print "Dataset definition '%s' has been created with id %s" % (result["defname"], result["defid"])
 
-class renameDefinitionCmd(CmdBase):
-    name = "rename-definition"
-    description = "Rename an existing dataset definition"
-    args = "<existing dataset definition> <new definition name>"
+class modifyDefinitionCmd(CmdBase):
+    name = "modify-definition"
+    description = "Modify an existing dataset definition"
+    args = "<existing dataset definition>"
+    options = [ "defname=", "description=" ]
     cmdgroup = 'definitions'
     def run(self, options, args):
-        if len(args) != 2:
+        if len(args) != 1:
             raise CmdError("Invalid arguments")
-        return self.samweb.renameDefinition(*args)
+        return self.samweb.modifyDefinition(args[0], defname=options.defname, description=options.description )
 
 class deleteDefinitionCmd(CmdBase):
     name = "delete-definition"

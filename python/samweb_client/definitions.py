@@ -65,13 +65,19 @@ def createDefinition(samweb, defname, dims, user=None, group=None, description=N
     return result.json()
 
 @samweb_method
-def renameDefinition(samweb, defname, newname):
-    """ Rename a dataset definition
-        definition name
-        new name for definition
-
+def modifyDefinition(samweb, existing_defname, defname=None, description=None):
+    """ Modify a dataset definition
+    arguments:
+        existing definition name
+        defname: new name for definition
+        description: new description
     """
-    samweb.putURL('/definitions/name/%s' % escape_url_component(defname), {'defname':newname}, secure=True, role='*')
+    params = {}
+    if defname:
+        params["defname"] = defname
+    if description:
+        params["description"] = description
+    samweb.putURL('/definitions/name/%s' % escape_url_component(existing_defname), params, secure=True, role='*')
 
 @samweb_method
 def deleteDefinition(samweb, defname):
