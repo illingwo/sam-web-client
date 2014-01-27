@@ -742,8 +742,9 @@ class listValuesCmd(_DBValuesCmdBase):
                 # then print that value (ie for data_tiers print the value of the data_tier key)
                 # else join the values with tabs
                 for k in i:
-                    if vtype.startswith(k): line = i[k]
-                    break
+                    if vtype.startswith(k):
+                        line = i[k]
+                        break
                 else:
                     line = '\t'.join(str(i[k]) for k in sorted(i.iterkeys()))
             else: line = '\t'.join(str(v) for v in i)
