@@ -87,7 +87,7 @@ def deleteDefinition(samweb, defname):
 
     (Definitions that have already been used cannot be deleted)
     """
-    result = samweb.postURL('/definitions/name/%s/delete?format=plain' % escape_url_component(defname), {}, secure=True)
+    result = samweb.deleteURL('/definitions/name/%s' % escape_url_component(defname), {}, secure=True)
     return result.text.rstrip()
 
 @samweb_method
