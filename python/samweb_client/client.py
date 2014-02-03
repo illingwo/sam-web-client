@@ -15,6 +15,7 @@ def get_version():
         # first try the baked in value
         try:
             from _version import version
+            _version = version
         except ImportError:
             _version = 'unknown'
 
