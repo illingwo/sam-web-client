@@ -1,5 +1,5 @@
 
-import time, os
+import time, os, re
 from samweb_client import json, convert_from_unicode
 from samweb_client.client import samweb_method
 from samweb_client.http_client import escape_url_path
@@ -25,7 +25,12 @@ def makeProjectName(samweb, description):
     description = description.replace(' ','_')
     import time
     now = time.strftime("%Y%m%d%H%M%S")
-    return "%s_%s_%s" % ( samweb.user ,description, now)
+    name = "%s_%s" % (description, now)
+    # check for the username, offset by _ or -
+    # if it's not there prepend it
+    if samweb.user and not re.search(r'(\A|[_-])%s(\Z|[_-])' % samweb.user, name):
+        name = '%s_%s' % (samweb.user, name)
+    return name
 
 @samweb_method
 def startProject(samweb, project, defname=None, station=None, group=None, user=None, snapshot_id=None):
