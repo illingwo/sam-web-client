@@ -76,7 +76,6 @@ class SAMWebClient(object):
         self.http_client.use_client_certificate(cert, key)
 
     def get_baseurl(self, secure=None):
-        secure = secure or self.secure 
         if not secure and self._baseurl is not None:
             return self._baseurl
         if secure and self._basesslurl is not None:
@@ -123,25 +122,23 @@ class SAMWebClient(object):
             url = self.get_baseurl(secure) + url
         return url
 
-    def getURL(self, url, params=None, secure=None, role=None,  *args, **kwargs):
-        url = self._prepareURL(url, secure)
-        if secure: kwargs['role'] = role or self.role
-        return self.http_client.getURL(url, params=params, *args, **kwargs)
+    def getURL(self, url, params=None, *args, **kwargs):
+        return self._doURL(self.http_client.getURL, url, params=params, *args, **kwargs)
 
-    def postURL(self, url, data=None, secure=None, role=None, *args, **kwargs):
-        url = self._prepareURL(url, secure)
-        if secure: kwargs['role'] = role or self.role
-        return self.http_client.postURL(url, data=data, *args, **kwargs)
+    def postURL(self, url, data=None, *args, **kwargs):
+        return self._doURL(self.http_client.postURL, url, data=data, *args, **kwargs)
 
-    def putURL(self, url, data=None, secure=None, role=None, *args, **kwargs):
-        url = self._prepareURL(url, secure)
-        if secure: kwargs['role'] = role or self.role
-        return self.http_client.putURL(url, data=data, *args, **kwargs)
+    def putURL(self, url, data=None, *args, **kwargs):
+        return self._doURL(self.http_client.putURL, url, data=data, *args, **kwargs)
 
-    def deleteURL(self, url, params=None, secure=None, role=None, *args, **kwargs):
+    def deleteURL(self, url, params=None, *args, **kwargs):
+        return self._doURL(self.http_client.deleteURL, url, params=params, *args, **kwargs)
+
+    def _doURL(self, method, url, params=None, data=None, secure=None, role=None, *args, **kwargs):
+        secure = secure or self.secure 
         url = self._prepareURL(url, secure)
         if secure: kwargs['role'] = role or self.role
-        return self.http_client.deleteURL(url, params=params, *args, **kwargs)
+        return method(url, params=params, data=data, *args, **kwargs)
 
     def get_verbose(self):
         return self.http_client.verbose
