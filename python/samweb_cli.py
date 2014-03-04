@@ -609,6 +609,7 @@ class runProjectCmd(CmdBase):
     description = """Run a project"""
     cmdgroup = 'projects'
     options = ['defname=','snapshot_id=int','max-files=int', 'station=',
+            ("name=", "Project name"),
             ("schemas=", "Comma separated list of url schemas this process prefers to receive"),
             ("parallel=int", "Number of parallel processes to run"),
             ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"), 
@@ -632,7 +633,7 @@ class runProjectCmd(CmdBase):
                     print ex
                     return False
 
-        self.samweb.runProject(defname=options.defname, snapshot_id=options.snapshot_id, maxFiles=max_files,
+        self.samweb.runProject(projectname=options.name, defname=options.defname, snapshot_id=options.snapshot_id, maxFiles=max_files,
                 callback=callback, schemas=options.schemas, station=options.station,
                 deliveryLocation=options.delivery_location, nparallel=options.parallel, quiet=options.quiet)
 

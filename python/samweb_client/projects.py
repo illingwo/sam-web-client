@@ -1,7 +1,7 @@
 
 import time, os, re
 from samweb_client import json, convert_from_unicode
-from samweb_client.client import samweb_method
+from samweb_client.client import samweb_method, get_version
 from samweb_client.http_client import escape_url_path
 from exceptions import *
 
@@ -327,7 +327,13 @@ def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=
             print "%sFailed to access file %s" % (prefix,fileurl)
             return False
 
-    samweb.runProject(defname=defname, snapshot_id=snapshot_id, schemas="https,file,gridftp",
-            application=('prestage','prestage','1'), callback=prestage, maxFiles=maxFiles,
+    projectname = 'prestage'
+    if defname:
+        projectname = samweb.makeProjectName('%s_%s' % (defname, projectname))
+    elif snapshot_id:
+        projectname = samweb.makeProjectName('snapshot_id_%d_%s' % (snapshot_id, projectname))
+
+    samweb.runProject(projectname=projectname, defname=defname, snapshot_id=snapshot_id, schemas="https,file,gridftp",
+            application=('prestage','prestage',get_version()), callback=prestage, maxFiles=maxFiles,
             station=station, deliveryLocation=deliveryLocation,nparallel=nparallel)
 
