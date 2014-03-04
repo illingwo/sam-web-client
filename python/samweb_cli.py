@@ -932,6 +932,9 @@ def main(args=None):
         print>>sys.stderr, '\n',command_list()
         return 1
 
+    # disable the implictly created --version option so commands can make use of the same name
+    parser.remove_option('--version')
+
     # set up client
     samweb = SAMWebClient()
     command = cmd(samweb)
