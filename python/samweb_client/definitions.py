@@ -22,7 +22,7 @@ def listDefinitions(samweb, stream=False, **queryCriteria):
     else: return list(output)
 
 def _descDefinitionURL(defname):
-    return '/definitions/name/' + defname + '/describe'
+    return '/definitions/name/' + escape_url_component(defname) + '/describe'
 
 @samweb_method
 def descDefinitionDict(samweb, defname):

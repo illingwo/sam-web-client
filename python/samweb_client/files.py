@@ -1,7 +1,7 @@
 
 from samweb_client import json, convert_from_unicode
 from samweb_client.client import samweb_method
-from samweb_client.http_client import escape_url_path
+from samweb_client.http_client import escape_url_path, escape_url_component
 from samweb_client.exceptions import *
 
 from itertools import ifilter
@@ -66,7 +66,7 @@ def listFiles(samweb, dimensions=None, defname=None, fileinfo=False, stream=Fals
     if fileinfo:
         params['fileinfo'] = 1
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/list' % escape_url_path(defname), params=params,stream=True)
+        result = samweb.getURL('/definitions/name/%s/files/list' % escape_url_component(defname), params=params,stream=True)
     else:
         result = samweb._callDimensions('/files/list', dimensions, params, stream=True)
     if fileinfo:
@@ -83,7 +83,7 @@ def listFilesSummary(samweb, dimensions=None, defname=None):
       dimensions: string (default None)
       defname: string definition name (default None)"""
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/summary' % escape_url_path(defname))
+        result = samweb.getURL('/definitions/name/%s/files/summary' % escape_url_component(defname))
     else:
         result = samweb._callDimensions('/files/summary', dimensions)
     return convert_from_unicode(result.json())
@@ -102,7 +102,7 @@ def countFiles(samweb, dimensions=None, defname=None):
       dimensions: string (default None)
       defname: string definition name (default None)"""
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/count' % defname)
+        result = samweb.getURL('/definitions/name/%s/files/count' % escape_url_component(defname))
     else:
         result = samweb._callDimensions('/files/count', dimensions)
     return long(result.text.strip())
@@ -112,7 +112,7 @@ def _make_file_path(filenameorid):
         fileid = long(filenameorid)
         path = '/files/id/%d' % fileid
     except ValueError:
-        path = '/files/name/%s' % escape_url_path(filenameorid)
+        path = '/files/name/%s' % escape_url_component(filenameorid)
     return path
 
 @samweb_method
@@ -173,7 +173,7 @@ def getFileLineage(samweb, lineagetype, filenameorid):
         lineagetype (ie "parents", "children")
         name or id of file
     """
-    result = samweb.getURL(_make_file_path(filenameorid) + '/lineage/' + escape_url_path(lineagetype))
+    result = samweb.getURL(_make_file_path(filenameorid) + '/lineage/' + escape_url_component(lineagetype))
     return convert_from_unicode(result.json())
 
 @samweb_method
