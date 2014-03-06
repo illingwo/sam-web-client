@@ -215,7 +215,7 @@ def setProcessStatus(samweb, status, projectnameorurl, processid=None, process_d
 @samweb_method
 def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callback=None,
         deliveryLocation=None, station=None, maxFiles=0, schemas=None,
-        application=('runproject','runproject','1'), nparallel=1, quiet=False ):
+        application=('runproject','runproject',get_version()), nparallel=1, quiet=False ):
     """ Run a project
 
     arguments (use keyword arguments, all default to None):
