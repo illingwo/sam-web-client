@@ -334,7 +334,7 @@ def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=
     elif snapshot_id:
         projectname = samweb.makeProjectName('snapshot_id_%d_%s' % (snapshot_id, projectname))
 
-    samweb.runProject(projectname=projectname, defname=defname, snapshot_id=snapshot_id, schemas="https,file,gridftp",
+    samweb.runProject(projectname=projectname, defname=defname, snapshot_id=snapshot_id, schemas="https,file,gsiftp",
             application=('prestage','prestage',get_version()), callback=prestage, maxFiles=maxFiles,
             station=station, deliveryLocation=deliveryLocation,nparallel=nparallel)
 
