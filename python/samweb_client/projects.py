@@ -235,6 +235,7 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
     if callback is None:
         def _print(fileurl):
             print fileurl
+            return True
         callback = _print
     if not projectname:
         if defname:
