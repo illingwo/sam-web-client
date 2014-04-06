@@ -148,22 +148,56 @@ def removeFileLocation(samweb, filenameorid, location):
     return samweb.postURL(url, data=data, secure=True, role='*')
 
 @samweb_method
-def getMetadata(samweb, filenameorid):
+def getMetadata(samweb, filenameorid, locations=False):
     """ Return metadata as a dictionary 
     arguments:
         name or id of file
+        locations: if True, also return file locations
     """
-    response = samweb.getURL(_make_file_path(filenameorid) + '/metadata')
+    params = {}
+    if locations: params['locations'] = True
+    response = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params=params)
     return convert_from_unicode(response.json())
 
 @samweb_method
-def getMetadataText(samweb, filenameorid, format=None):
+def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False):
+    """ Return a list of metadata dictionaries
+    (This method does not return an error if a
+    file does not exist; instead it returns no
+    result for that file)
+    arguments:
+        list of file names or ids
+        locations: if True include location information
+        asJSON: return the undecoded JSON string instead of python objects
+    """
+    file_names = []
+    file_ids = []
+    for filenameorid in filenameorids:
+        try:
+            file_ids.append(long(filenameorid))
+        except ValueError:
+            file_names.append(filenameorid)
+    
+    params = {}
+    if file_names: params["file_name"] = file_names
+    if file_ids: params["file_id"] = file_ids
+    if locations: params["locations"] = 1
+    response = samweb.getURL("/files/metadata", params=params)
+    if asJSON:
+        return response.text.rstrip()
+    else:
+        return convert_from_unicode(response.json())
+
+@samweb_method
+def getMetadataText(samweb, filenameorid, format=None, locations=False):
     """ Return metadata as a string
     arguments:
         name or id of file
     """
     if format is None: format='plain'
-    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params={'format':format})
+    params = {'format':format}
+    if locations: params['locations'] = 1
+    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params=params)
     return result.text.rstrip()
 
 @samweb_method

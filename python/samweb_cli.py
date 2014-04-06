@@ -125,15 +125,20 @@ class getMetadataCmd(CmdBase):
     name = 'get-metadata'
     description = "Get metadata for a file"
     args = "<file name>"
+    options = [ ("locations", "Include locations in output (requires --json)") ]
     cmdgroup = 'datafiles'
 
     def addOptions(self, parser):
-        parser.add_option("--json", action="store_const", const="json", dest="format")
+        parser.add_option("--json", action="store_const", const="json", dest="format", help="Return output in JSON format" )
 
     def run(self, options, args):
-        if len(args) != 1:
-            raise CmdError("Invalid or no argument specified")
-        print self.samweb.getMetadataText(args[0],format=options.format)
+        if len(args) < 1:
+            raise CmdError("No argument specified")
+        elif len(args) == 1:
+            print self.samweb.getMetadataText(args[0],format=options.format, locations=options.locations)
+        else:
+            if options.format != 'json': raise CmdError("Multiple metadata requires --json format")
+            print self.samweb.getMultipleMetadata(args, locations=options.locations, asJSON=True)
 
 class fileLineage(CmdBase):
     name = 'file-lineage'
