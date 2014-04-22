@@ -693,7 +693,7 @@ If a single argument is provided, list all the values for that parameter name.""
             for p in self.samweb.listParameters():
                 if isinstance(p, basestring): line = p
                 elif isinstance(p, dict):
-                    line = "%(name)s\t%(data_type)s" % p
+                    line = "%(name)s (%(data_type)s)" % p
                 else: line = str(p)
                 print line
         elif len(args) == 1:
