@@ -214,7 +214,7 @@ def setProcessStatus(samweb, status, projectnameorurl, processid=None, process_d
 
 @samweb_method
 def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callback=None,
-        deliveryLocation=None, station=None, maxFiles=0, schemas=None,
+        deliveryLocation=None, node=None, station=None, maxFiles=0, schemas=None,
         application=('runproject','runproject',get_version()), nparallel=1, quiet=False ):
     """ Run a project
 
@@ -224,6 +224,7 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
         snapshot_id: snapshot_id to use
         callback: a single argument function invoked on each file
         deliveryLocation
+        node
         station
         maxFiles
         schemas
@@ -263,7 +264,7 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
 
 
     def runProcess():
-        cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, description=process_description, maxFiles=maxFiles, schemas=schemas)
+        cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, node=node, description=process_description, maxFiles=maxFiles, schemas=schemas)
         if nparallel > 1: 
             prefix = '%s: ' % threading.currentThread().getName()
         else: prefix=''
@@ -303,7 +304,7 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
     return projectname
 
 @samweb_method
-def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=None, deliveryLocation=None, nparallel=1):
+def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=None, deliveryLocation=None, node=None, nparallel=1):
     """ Prestage the given dataset. If the provided locations are WebDAV, it will try to read a couple of bytes from each file """
 
     if nparallel is None or nparallel < 2: nparallel = 1
@@ -317,7 +318,7 @@ def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=
         if not fileurl.startswith('https'):
             print '%sNot an https url: %s' % (prefix, fileurl)
             return False
-        cmd = ["curl", "-s", "-o", "/dev/null", "-L", "-r", "0-1", "--tlsv1", "--capath", samweb.http_client.get_ca_dir() , "--cert", samweb.http_client.get_cert(), fileurl]
+        cmd = ["curl", "-s", "-f", "-o", "/dev/null", "-L", "-r", "0-1", "--tlsv1", "--capath", samweb.http_client.get_ca_dir() , "--cert", samweb.http_client.get_cert(), "--cacert", samweb.http_client.get_cert(), fileurl]
         print "%sGot file url: %s\n%sWill execute:\n%s%s" % (prefix, fileurl, prefix, prefix, ' '.join(cmd))
         import subprocess
         rval = subprocess.call(cmd,stdout=None)
@@ -334,7 +335,7 @@ def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=
     elif snapshot_id:
         projectname = samweb.makeProjectName('snapshot_id_%d_%s' % (snapshot_id, projectname))
 
-    samweb.runProject(projectname=projectname, defname=defname, snapshot_id=snapshot_id, schemas="https,file,gsiftp",
+    samweb.runProject(projectname=projectname, defname=defname, snapshot_id=snapshot_id, schemas="https",
             application=('prestage','prestage',get_version()), callback=prestage, maxFiles=maxFiles,
-            station=station, deliveryLocation=deliveryLocation,nparallel=nparallel)
+            station=station, deliveryLocation=deliveryLocation, node=node, nparallel=nparallel)
 

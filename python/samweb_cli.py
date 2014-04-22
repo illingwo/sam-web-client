@@ -618,6 +618,7 @@ class runProjectCmd(CmdBase):
             ("schemas=", "Comma separated list of url schemas this process prefers to receive"),
             ("parallel=int", "Number of parallel processes to run"),
             ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"), 
+            ("node=", "The current node name. The default is the local hostname, which is appropriate for most situations"),
             "quiet",
             ]
     args = '<command to run (%fileurl will be replaced by file url)>'
@@ -640,7 +641,7 @@ class runProjectCmd(CmdBase):
 
         self.samweb.runProject(projectname=options.name, defname=options.defname, snapshot_id=options.snapshot_id, maxFiles=max_files,
                 callback=callback, schemas=options.schemas, station=options.station,
-                deliveryLocation=options.delivery_location, nparallel=options.parallel, quiet=options.quiet)
+                deliveryLocation=options.delivery_location, node=oprtions.node, nparallel=options.parallel, quiet=options.quiet)
 
 class prestageDatasetCmd(CmdBase):
     name = 'prestage-dataset'
@@ -649,6 +650,7 @@ class prestageDatasetCmd(CmdBase):
     options = ['defname=','snapshot_id=int','max-files=int', 'station=',
             ("parallel=int", "Number of parallel processes to run"),
             ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"),
+            ("node=", "The current node name. The default is the local hostname, which is appropriate for most situations"),
             ]
 
     def run(self, options, args):
@@ -656,7 +658,7 @@ class prestageDatasetCmd(CmdBase):
             max_files = options.max_files
         else: max_files=0
         self.samweb.prestageDataset(defname=options.defname,snapshot_id=options.snapshot_id,maxFiles=max_files,
-                station=options.station, deliveryLocation=options.delivery_location,nparallel=options.parallel)
+                station=options.station, deliveryLocation=options.delivery_location,node=options.node, nparallel=options.parallel)
 
 class listParametersCmd(CmdBase):
     name = 'list-parameters'
