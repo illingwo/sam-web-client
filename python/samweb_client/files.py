@@ -148,6 +148,20 @@ def removeFileLocation(samweb, filenameorid, location):
     return samweb.postURL(url, data=data, secure=True, role='*')
 
 @samweb_method
+def getFileAccessUrls(samweb, filenameorid, schema, locationfilter=None):
+    """ return urls by which this file may be accessed
+    arguments:
+        name or id of file
+        schema
+        locationfilter (default None)
+    """
+    params = { "schema": schema }
+    if locationfilter:
+        params["location"] = locationfilter
+    response = samweb.getURL(_make_file_path(filenameorid) + '/locations/url', params=params)
+    return convert_from_unicode(response.json())
+
+@samweb_method
 def getMetadata(samweb, filenameorid, locations=False):
     """ Return metadata as a dictionary 
     arguments:

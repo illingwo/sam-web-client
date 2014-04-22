@@ -22,6 +22,18 @@ class TestDefinition(testbase.SamdevTest):
         files = list(files)
         assert len(files)==1 and files[0]=="MN_00000798_0004_numib_v04_0911090239_RawEvents.root"
 
+class TestLocation(testbase.SamdevTest):
+
+    def test_locateFile(self):
+        locations = self.samweb.locateFile("MN_00000798_0004_numib_v04_0911090239_RawEvents.root")
+
+        assert set([l["full_path"] for l in locations]) == set(['enstore:/pnfs/samdev/rawdata/raw/numib/00/00/07/98', 'samdevdata:/grid/data/samdev/data01'])
+
+    def test_fileUrl(self):
+        urls = self.samweb.getFileAccessUrls("MN_00000798_0004_numib_v04_0911090239_RawEvents.root", schema="gsiftp")
+        assert set(urls) == set(['gsiftp://fg-bestman1.fnal.gov:2811/grid/data/samdev/data01/MN_00000798_0004_numib_v04_0911090239_RawEvents.root',
+            'gsiftp://fndca1.fnal.gov:2811/rawdata/raw/numib/00/00/07/98/MN_00000798_0004_numib_v04_0911090239_RawEvents.root'])
+
 class TestDefinitionCommands(testbase.SAMWebCmdTest):
 
     def test_listDimensions(self):
@@ -35,6 +47,14 @@ class TestDefinitionCommands(testbase.SAMWebCmdTest):
         self.check_cmd_return(cmdline)
         files = self.stdout.rstrip().split('\n')
         assert len(files)==1 and files[0]=="MN_00000798_0004_numib_v04_0911090239_RawEvents.root"
+
+class TestLocateCommands(testbase.SAMWebCmdTest):
+    def test_getFileAccessUrl(self):
+        cmdline = ['-e', 'samdev', 'get-file-access-url', '--schema=gsiftp', 'MN_00000798_0004_numib_v04_0911090239_RawEvents.root']
+        self.check_cmd_return(cmdline)
+        urls = self.stdout.rstrip().split('\n')
+        assert set(urls) == set(['gsiftp://fg-bestman1.fnal.gov:2811/grid/data/samdev/data01/MN_00000798_0004_numib_v04_0911090239_RawEvents.root',
+            'gsiftp://fndca1.fnal.gov:2811/rawdata/raw/numib/00/00/07/98/MN_00000798_0004_numib_v04_0911090239_RawEvents.root'])
 
 if __name__ == '__main__':
     unittest.main()

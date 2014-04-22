@@ -101,6 +101,26 @@ class locateFileCmd(CmdBase):
         for loc in ( l.get('location') or l['full_path'] for l in self.samweb.locateFile(filename)):
             print loc
 
+class getFileAccessUrlCmd(CmdBase):
+    name = "get-file-access-url"
+    description = ("Get urls by which files can be accessed.\n\nNote that using this command does no data movement or prestaging and is not recommended for large scale data access.")
+    args = "<file name>"
+    cmdgroup = 'datafiles'
+
+    def addOptions(self, parser):
+        parser.add_option("--schema", action="store", dest="schema", default="gsiftp",
+                help="Access schema for file")
+        parser.add_option("--location", action="store", dest="location",
+                help="Filter returned urls by location prefix")
+
+    def run(self, options, args):
+        if len(args) != 1:
+           raise CmdError("No filename specified")
+        filename = args[0]
+        urls = self.samweb.getFileAccessUrls(filename, schema=options.schema, locationfilter=options.location)
+        for url in urls:
+            print url
+
 class addFileLocationCmd(CmdBase):
     name='add-file-location'
     description="add a location for a file"
