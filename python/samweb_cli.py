@@ -661,7 +661,7 @@ class runProjectCmd(CmdBase):
 
         self.samweb.runProject(projectname=options.name, defname=options.defname, snapshot_id=options.snapshot_id, maxFiles=max_files,
                 callback=callback, schemas=options.schemas, station=options.station,
-                deliveryLocation=options.delivery_location, node=oprtions.node, nparallel=options.parallel, quiet=options.quiet)
+                deliveryLocation=options.delivery_location, node=options.node, nparallel=options.parallel, quiet=options.quiet)
 
 class prestageDatasetCmd(CmdBase):
     name = 'prestage-dataset'
