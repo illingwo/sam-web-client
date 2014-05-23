@@ -180,7 +180,8 @@ class fileLineage(CmdBase):
 
 class calculateChecksumCmd(CmdBase):
     name = 'file-checksum'
-    description = 'Calculate a checksum for a file using the enstore algorithm (sometimes inaccurately described as a "CRC")'
+    description = ('Calculate a checksum for a file using the enstore algorithm (sometimes inaccurately described as a "CRC"). '
+            'This command reads the file from a path on the local system and so the file must be available on a local or shared filesystem.')
     args = "<path to file> [<path to file> [...]]"
     cmdgroup = 'utility'
 
@@ -196,6 +197,7 @@ class calculateChecksumCmd(CmdBase):
                     print "%s: %s" % (a, json.dumps(fileEnstoreChecksum(a)))
                 except Error, ex:
                     print "%s: %s" % (a, ex)
+
 class validateFileMetadata(CmdBase):
     name = 'validate-metadata'
     description = "Check file metadata for correctness"
