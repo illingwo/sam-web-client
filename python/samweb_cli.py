@@ -896,11 +896,13 @@ commands = {
 command_groups = {}
 
 group_descriptions = {
-        "datafiles": "Data file commands",
-        "definitions" : "Definition commands",
-        "projects" : "Project commands",
-        "admin": "Admin commands",
-        "utility": "Utility commands"
+        # The admin group should go last, as normal users don't care
+        # name : ( display text, sort order )
+        "datafiles": ("Data file commands", 1),
+        "definitions" : ("Definition commands", 2),
+        "projects" : ("Project commands", 3),
+        "admin": ("Admin commands", 100),
+        "utility": ("Utility commands", 90),
         }
 
 # add all commands that define a name attribute to the list
@@ -912,10 +914,16 @@ for o in locals().values():
     except TypeError: pass
 
 def command_list():
+    import operator
     s = ["Available commands:",]
-    for g in command_groups:
+    def sort_groups(g):
+        try:
+            return group_descriptions[g][1]
+        except KeyError:
+            return 1000
+    for g in sorted(command_groups, key=sort_groups):
         if g is None: group_desc = 'Uncategorized'
-        else: group_desc = group_descriptions.get(g, g)
+        else: group_desc = group_descriptions.get(g, (g,) )[0]
         s.append("  %s:" % group_desc)
         for c in sorted(command_groups[g]):
             s.append("    %s" % c)
