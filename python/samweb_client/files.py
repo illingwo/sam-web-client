@@ -126,6 +126,26 @@ def locateFile(samweb, filenameorid):
     return convert_from_unicode(result.json())
 
 @samweb_method
+def locateFiles(samweb, filenameorids):
+    """ return the locations of multiple files
+    The return value is a dictionary of { file_name_or_id : location } pairs
+    """
+
+    file_names = []
+    file_ids = []
+    for filenameorid in filenameorids:
+        try:
+            file_ids.append(long(filenameorid))
+        except ValueError:
+            file_names.append(filenameorid)
+
+    params = {}
+    if file_names: params["file_name"] = file_names
+    if file_ids: params["file_id"] = file_ids
+    response = samweb.getURL("/files/locations", params=params)
+    return convert_from_unicode(response.json())
+
+@samweb_method
 def addFileLocation(samweb, filenameorid, location):
     """ Add a location for a file
     arguments:

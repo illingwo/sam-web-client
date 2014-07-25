@@ -29,6 +29,11 @@ class TestLocation(testbase.SamdevTest):
 
         assert set([l["full_path"] for l in locations]) == set(['enstore:/pnfs/samdev/rawdata/raw/numib/00/00/07/98', 'samdevdata:/grid/data/samdev/data01'])
 
+    def test_locateFiles(self):
+        locations = self.samweb.locateFiles(["MN_00000798_0004_numib_v04_0911090239_RawEvents.root", 'MN_00000798_0005_numib_v04_0911090240_RawEvents.root'])
+        assert "MN_00000798_0004_numib_v04_0911090239_RawEvents.root" in locations and 'MN_00000798_0005_numib_v04_0911090240_RawEvents.root' in locations
+        assert set([l["full_path"] for l in locations['MN_00000798_0004_numib_v04_0911090239_RawEvents.root']]) == set(['enstore:/pnfs/samdev/rawdata/raw/numib/00/00/07/98', 'samdevdata:/grid/data/samdev/data01'])
+
     def test_fileUrl(self):
         urls = self.samweb.getFileAccessUrls("MN_00000798_0004_numib_v04_0911090239_RawEvents.root", schema="gsiftp")
         assert set(urls) == set(['gsiftp://fg-bestman1.fnal.gov:2811/grid/data/samdev/data01/MN_00000798_0004_numib_v04_0911090239_RawEvents.root',
