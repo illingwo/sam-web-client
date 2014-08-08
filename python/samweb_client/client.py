@@ -96,7 +96,11 @@ class SAMWebClient(object):
     baseurl = property(get_baseurl)
 
     def get_group(self):
-        return self._group or self.get_experiment()
+        if not self._group:
+            # if the group isn't set then get it from the experiment name
+            # knocking off anything after a trailing slash (ie hypot/dev -> hypot)
+            self._group = self.get_experiment().split('/', 1)[0]
+        return self._group
 
     def set_group(self,group):
         self._group = group
