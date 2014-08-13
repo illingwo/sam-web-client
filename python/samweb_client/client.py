@@ -36,11 +36,12 @@ class SAMWebClient(object):
     _basesslurl = os.environ.get('SAM_WEB_BASE_SSL_URL')
     _group = os.environ.get('SAM_GROUP')
     _station = os.environ.get('SAM_STATION')
+    _timezone = os.environ.get('SAM_TZ')
 
     # SAM role to use
     _default_role = 'default'
 
-    def __init__(self, experiment=None, secure=False, cert=None, key=None, devel=None):
+    def __init__(self, experiment=None, secure=False, cert=None, key=None, devel=None, timezone=None):
         self.devel = False
         if experiment is not None: self.experiment = experiment
         self.secure = secure
@@ -48,6 +49,8 @@ class SAMWebClient(object):
         self.http_client = http_client.get_client()
         self.set_client_certificate(cert, key)
         self.role = None
+        timezone = timezone or self._timezone
+        if timezone: self.timezone = timezone
 
     def get_role(self):
         return self._role
@@ -119,6 +122,14 @@ class SAMWebClient(object):
         return pwd.getpwuid(os.getuid()).pw_name
 
     user = property(get_user)
+
+    def get_timezone(self):
+        return self.http_client.timezone
+
+    def set_timezone(self, new_tz):
+        self.http_client.timezone = new_tz
+
+    timezone = property(get_timezone, set_timezone)
 
     def _prepareURL(self, url, secure=None):
         # if provided with a relative url, add the baseurl

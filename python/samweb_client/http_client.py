@@ -39,6 +39,16 @@ class SAMWebHTTPClient(object):
         if 'User-Agent' not in self._default_headers:
             self._default_headers['User-Agent'] = self._get_user_agent()
 
+    def get_timezone(self):
+        return self._default_headers.get('Timezone')
+    def set_timezone(self, tz):
+        if not tz:
+            return self._default_headers.pop('Timezone', None)
+        else:
+            self._default_headers['Timezone'] = str(tz)
+
+    timezone = property(get_timezone, set_timezone)
+
     def make_ssl_error(self, msg):
         """ Try to make sense of ssl errors and return a suitable exception object """
         if 'error:14094410' in msg:

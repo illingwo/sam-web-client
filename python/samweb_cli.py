@@ -951,6 +951,7 @@ def main(args=None):
     base_options.add_option('--cert', dest='cert', help='x509 certificate for authentication. If not specified, use $X509_USER_PROXY, $X509_USER_CERT/$X509_USER_KEY or standard grid proxy location')
     base_options.add_option('--key', dest='key', help='x509 key for authentication (defaults to same as certificate)')
     base_options.add_option('-r', '--role', dest='role', help='specific role to use for authorization')
+    base_options.add_option('-z', '--timezone', dest='timezone', help='set time zone for server responses')
     base_options.add_option('-v','--verbose', action="store_true", dest='verbose', default=False, help="Verbose mode")
     parser.add_option_group(base_options)
 
@@ -1024,6 +1025,9 @@ def main(args=None):
 
     if options.role: samweb.role = options.role
     if cmdoptions.role: samweb.role = cmdoptions.role
+
+    timezone = cmdoptions.timezone or options.timezone
+    if timezone: samweb.timezone = timezone
 
     # configure the url
     experiment = options.experiment or cmdoptions.experiment
