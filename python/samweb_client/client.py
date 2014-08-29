@@ -34,6 +34,7 @@ class SAMWebClient(object):
     _experiment = os.environ.get('SAM_EXPERIMENT')
     _baseurl = os.environ.get('SAM_WEB_BASE_URL')
     _basesslurl = os.environ.get('SAM_WEB_BASE_SSL_URL')
+    if _basesslurl is None and _baseurl and _baseurl.startswith('https:'): _basesslurl = _baseurl
     _group = os.environ.get('SAM_GROUP')
     _station = os.environ.get('SAM_STATION')
     _timezone = os.environ.get('SAM_TZ')
