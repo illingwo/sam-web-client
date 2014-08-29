@@ -181,16 +181,21 @@ class fileLineage(CmdBase):
 class calculateChecksumCmd(CmdBase):
     name = 'file-checksum'
     description = ('Calculate a checksum for a file using the enstore algorithm (sometimes inaccurately described as a "CRC"). '
-            'This command reads the file from a path on the local system and so the file must be available on a local or shared filesystem.')
+            'This command reads the file from a path on the local system and so the file must be available on a local or shared filesystem. '
+            'If a single argument of \'-\' is provided then the command will read from standard input.'
+            )
     args = "<path to file> [<path to file> [...]]"
     cmdgroup = 'utility'
 
     def run(self, options, args):
         if not args:
             raise CmdError("No file paths provided")
-        from samweb_client.utility import fileEnstoreChecksum
+        from samweb_client.utility import fileEnstoreChecksum, enstoreChecksum
         if len(args) == 1:
-            print json.dumps(fileEnstoreChecksum(args[0]))
+            if args[0] == '-':
+                print json.dumps(enstoreChecksum(sys.stdin))
+            else:
+                print json.dumps(fileEnstoreChecksum(args[0]))
         else:
             for a in args:
                 try:
