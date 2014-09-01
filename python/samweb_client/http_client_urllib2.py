@@ -189,7 +189,10 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
             except httplib.HTTPException, x:
                 # I'm not sure exactly what circumstances cause this
                 # but assume that it's a retriable error
-                errmsg = str(x.reason)
+                try:
+                    errmsg = str(x.reason)
+                except AttributeError:
+                    errmsg = str(x)
                 if time.time() >= tmout:
                     raise ConnectionError(errmsg)
 
