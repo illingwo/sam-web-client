@@ -164,6 +164,7 @@ class fileLineage(CmdBase):
     name = 'file-lineage'
     description = 'Get lineage for a file'
     args = '<parents|children|ancestors|descendants|rawancestors> <file name>'
+    options = [ ('showretired', 'Show retired files') ]
     cmdgroup = 'datafiles'
 
     def run(self, options, args):
@@ -171,7 +172,12 @@ class fileLineage(CmdBase):
             raise CmdError("Invalid or no argument specified")
         def _printLineage(results, indent=0):
             for r in results:
-                print '%s%s' % (' '*indent, r['file_name'])
+                if r.get('retired'):
+                    if options.showretired:
+                        print '%s(Retired file %s - %d)' % (' '*indent, r['file_name'], r['file_id'])
+                    else: continue # skip over retired files and their lineage completely
+                else:
+                    print '%s%s' % (' '*indent, r['file_name'])
                 for k in ('children','parents'):
                     if k in r:
                         _printLineage(r[k], indent+4)
