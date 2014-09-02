@@ -1,0 +1,13 @@
+v1_9:
+
+All commands now accept a --timezone/-z option.
+The file-lineage command will filter out retired files by default, and now has
+a --showretired flag which displays them.
+The file-checksum command can now read data from standard input by giving the
+source argument as '-' (useful if the file you're interested in is not on local
+disk, but has some way of dumping it to std out).
+
+Bug #6893: Inconsistent exception handling
+Bug #6900: file-lineage command doesn't filter retired files
+Feature #6892: Send requested timezone information to server
+Feature #6894: Allow file-checksum command to read from standard input
