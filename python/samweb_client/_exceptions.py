@@ -43,6 +43,11 @@ class SAMWebHTTPError(Error):
         else:
             return "HTTP error: %(code)d %(msg)s\nURL: %(url)s" % self.__dict__
 
+class GenericHTTPError(SAMWebHTTPError):
+    _code = None
+    def __init__(self, method, url, msg):
+        SAMWebHTTPError.__init__(self, method, url, self._code, msg)
+
 class HTTPBadRequest(SAMWebHTTPError):
     def __init__(self, method, url, msg):
         SAMWebHTTPError.__init__(self, method, url, 400, msg)
@@ -79,6 +84,13 @@ class _Exceptions(object):
 
     def __init__(self):
         self._dynamic_exceptions = {}
+        self._base_classes_by_code = {
+            400: self.HTTPBadRequest,
+            403: self.HTTPForbidden,
+            404: self.HTTPNotFound,
+            409: self.HTTPConflict,
+            }
+
         self.lock = threading.Lock()
 
     def __getattr__(self, attr):
@@ -140,16 +152,23 @@ class _Exceptions(object):
             return self.SAMWebHTTPError(method, url, code, msg)
 
     def _get_exception_class(self, code):
-        if code == 400:
-            return self.HTTPBadRequest
-        elif code == 403:
-            return self.HTTPForbidden
-        elif code == 404:
-            return self.HTTPNotFound
-        elif code == 409:
-            return self.HTTPConflict
-        else:
-            return self.SAMWebHTTPError
+        try:
+            return self._base_classes_by_code[code]
+        except KeyError:
+            # make a new base
+            clsname = "HTTP%dError" % code
+            try:
+                # check if anybody already referred to this class
+                base = self._dynamic_exceptions[clsname]
+                # set the base to the correct type
+                base.__bases__ = (GenericHTTPError, )
+            except KeyError:
+                # else create it
+                base = self._makeClass(clsname, GenericHTTPError)
+                self._base_classes_by_code[code] = base
+                self._dynamic_exceptions[clsname] = base
+            base._code = code
+            return base
 
 # Add the exception classes the _Exceptions.__all__ so that "from exceptions import *" will work
 import types
