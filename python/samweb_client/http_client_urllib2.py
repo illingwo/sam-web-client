@@ -185,7 +185,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                 else:
                     errmsg = str(x.reason)
                 if time.time() >= tmout:
-                    raise ConnectionError(errmsg)
+                    raise SAMWebConnectionError(errmsg)
             except httplib.HTTPException, x:
                 # I'm not sure exactly what circumstances cause this
                 # but assume that it's a retriable error
@@ -194,7 +194,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                 except AttributeError:
                     errmsg = str(x)
                 if time.time() >= tmout:
-                    raise ConnectionError(errmsg)
+                    raise SAMWebConnectionError(errmsg)
 
             if self.verboseretries:
                 print>>sys.stderr, '%s: retrying in %d s' %( errmsg, retryinterval)
