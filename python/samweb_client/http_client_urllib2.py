@@ -168,14 +168,14 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                     errmsg = err['message']
                     errtype = err['error']
                 else:
-                    if x.code > 500:
+                    if x.code >= 500:
                         errmsg = "HTTP error: %d %s" % (x.code, x.msg)
                     else:
                         errmsg = x.read().rstrip()
                     errtype = None
                 x.close() # ensure that the socket is closed (otherwise it may hang around in the traceback object)
-                # retry server errors (excluding internal errors)
-                if x.code > 500 and time.time() < tmout:
+                # retry server errors
+                if x.code >= 500 and time.time() < tmout:
                     pass
                 else:
                     raise makeHTTPError(method, url, x.code, errmsg, errtype)
