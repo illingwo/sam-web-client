@@ -189,23 +189,38 @@ class calculateChecksumCmd(CmdBase):
     description = ('Calculate a checksum for a file using the enstore algorithm (sometimes inaccurately described as a "CRC"). '
             'This command reads the file from a path on the local system and so the file must be available on a local or shared filesystem. '
             'If a single argument of \'-\' is provided then the command will read from standard input.'
+            'The "enstore", "adler32", "md5", and "sha1" types are always supported. Other hash types may be available depending on the '
+            'combination of python and openssl version. '
             )
     args = "<path to file> [<path to file> [...]]"
+    options = [ ('old', 'Return output in old metadata format'),
+            ('type=', 'Comma separated list of checksum types'),
+            ]
     cmdgroup = 'utility'
+
+    def addOptions(self, parser):
+        parser.add_option("--type", action="append", dest="type", help="Comma separated list of checksum types" )
 
     def run(self, options, args):
         if not args:
             raise CmdError("No file paths provided")
-        from samweb_client.utility import fileEnstoreChecksum, enstoreChecksum
+
+        if options.type:
+            algorithms = []
+            for t in options.type:
+                algorithms.extend(t.split(','))
+        else:
+            algorithms=None
+        from samweb_client.utility import fileChecksum, calculateChecksum
         if len(args) == 1:
             if args[0] == '-':
-                print json.dumps(enstoreChecksum(sys.stdin))
+                print json.dumps(calculateChecksum(sys.stdin, checksum_types=algorithms, oldformat=options.old))
             else:
-                print json.dumps(fileEnstoreChecksum(args[0]))
+                print json.dumps(fileChecksum(args[0], checksum_types=algorithms, oldformat=options.old))
         else:
             for a in args:
                 try:
-                    print "%s: %s" % (a, json.dumps(fileEnstoreChecksum(a)))
+                    print "%s: %s" % (a, json.dumps(fileChecksum(a, checksum_types=algorithms, oldformat=options.old)))
                 except Error, ex:
                     print "%s: %s" % (a, ex)
 
