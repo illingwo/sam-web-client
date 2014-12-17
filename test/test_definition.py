@@ -7,7 +7,7 @@ import time,os
 
 defname = 'test-project'
 
-class TestDefinitionMinerva(testbase.SamdevTest):
+class TestDefinition(testbase.SamdevTest):
 
     def test_descDefinition_DefNotFound(self):
         fake_def_name = 'doesnotexist_%d' % time.time()

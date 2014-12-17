@@ -19,17 +19,15 @@ class AdminTest(testbase.SamdevTest):
         values = self.samweb.listValues('data_tiers')
         assert 'raw' in (v['data_tier'] for v in values)
 
-class MinervaAdminTest(testbase.MinervaDevTest):
-
     def test_add_parameter(self):
         self.assertRaises(samweb_client.exceptions.HTTPConflict, self.samweb.addParameter, 'Offline.tag','string')
 
     def test_listDataDisks(self):
         disks = self.samweb.listDataDisks()
-        assert 'minerva_bluearc:/minerva/data' in ( d['mount_point'] for d in disks )
+        assert 'samdevdata:/grid' in ( d['mount_point'] for d in disks )
 
     def test_addDataDisk(self):
-        self.assertRaises(samweb_client.exceptions.HTTPConflict, self.samweb.addDataDisk, 'minerva_bluearc:/minerva/data')
+        self.assertRaises(samweb_client.exceptions.HTTPConflict, self.samweb.addDataDisk, 'samdevdata:/grid')
 
     def test_listUsers(self):
         users = self.samweb.listUsers()
@@ -51,19 +49,19 @@ class TestAdminCommands(testbase.SAMWebCmdTest):
         self.check_cmd_return(cmdline)
 
     def test_addParameterCmd(self):
-        cmdline = '-e minerva/dev add-parameter Offline.tag string'
+        cmdline = '-e samdev add-parameter Offline.tag string'
         self.run_cmd(cmdline)
         assert "Parameter Offline.tag already exists" in self.stderr
 
     def test_listDataDisksCmd(self):
-        cmdline = '-e minerva/dev list-data-disks'
+        cmdline = '-e samdev list-data-disks'
         self.check_cmd_return(cmdline)
-        assert 'minerva_bluearc:/minerva/data\n' in self.stdout
+        assert 'samdevdata:/grid\n' in self.stdout
 
     def test_addDataDiskCmd(self):
-        cmdline = '-e minerva/dev add-data-disk minerva_bluearc:/minerva/data'
+        cmdline = '-e samdev add-data-disk samdevdata:/grid'
         self.run_cmd(cmdline)
-        assert "Disk for node 'minerva_bluearc', directory '/minerva/data' already exists" in self.stderr
+        assert "Disk for node 'samdevdata', directory '/grid' already exists" in self.stderr
 
     def test_listValuesCmd(self):
         cmdline = '-e samdev list-values data_tiers'
