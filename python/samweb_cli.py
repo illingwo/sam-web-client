@@ -531,6 +531,7 @@ class startProcessCmd(CmdBase):
     description = "Start a consumer process within a project"
     options = [ "appfamily=", "appname=", "appversion=",
             ("url", "Return the entire process url rather than just the process id"), 
+            ("user=", "Username of the project runner. Default is the OS username. May need to be set if the project owner is different from the account running the process"),
             ("node=", "The current node name. The default is the local hostname, which is appropriate for most situations"),
             ("delivery-location=", "Location to which the files should be delivered (defaults to the same as the node option)"), 
             ("max-files=int", "Limit the maximum number of files to give to the process"), 
@@ -551,6 +552,8 @@ class startProcessCmd(CmdBase):
             projecturl = self.samweb.findProject(projecturl)
 
         kwargs={}
+        if options.user:
+            kwargs["user"] = options.user
         if options.node:
             kwargs["node"]= options.node
         if options.delivery_location:

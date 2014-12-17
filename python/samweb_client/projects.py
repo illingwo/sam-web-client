@@ -79,10 +79,14 @@ def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLoc
         # default for the node is the local hostname
         import socket
         node = socket.getfqdn()
-    if not user:
+
+    # if the user isn't given and we aren't using client certs, set it to the default
+    if not user and not projecturl.startswith('https:'):
         user = samweb.user
 
-    args = { "appname":appname, "appversion":appversion, "node" : node, "username":user }
+    args = { "appname":appname, "appversion":appversion, "node" : node, }
+    if user:
+        args["username"] = user
     if appfamily:
         args["appfamily"] = appfamily
     if maxFiles:
