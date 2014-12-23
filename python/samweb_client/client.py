@@ -32,6 +32,9 @@ def get_version():
 
 class SAMWebClient(object):
     _experiment = os.environ.get('SAM_EXPERIMENT')
+    _host = os.environ.get('SAM_WEB_HOST') or 'samweb.fnal.gov'
+    _port = os.environ.get('SAM_WEB_PORT') or '8480'
+    _sslport = os.environ.get('SAM_WEB_SSL_PORT') or '8483'
     _baseurl = os.environ.get('SAM_WEB_BASE_URL')
     _basesslurl = os.environ.get('SAM_WEB_BASE_SSL_URL')
     if _basesslurl is None and _baseurl and _baseurl.startswith('https:'): _basesslurl = _baseurl
@@ -79,7 +82,16 @@ class SAMWebClient(object):
     def set_client_certificate(self, cert, key=None):
         self.http_client.use_client_certificate(cert, key)
 
+    def set_host(host):
+        self._host = host
+
+    def set_ports(port, sslport):
+        if port: self._port = port
+        if sslport: self._sslport = sslport
+
     def get_baseurl(self, secure=None):
+        """ Return the base url. If secure is set this will be an
+        https url, if not it may not be """
         if not secure and self._baseurl is not None:
             return self._baseurl
         if secure and self._basesslurl is not None:
@@ -93,9 +105,9 @@ class SAMWebClient(object):
             if self._baseurl:
                 import sys
                 sys.stderr.write('Warning: BASEURL is set, but using default SSL URL')
-            return "https://samweb.fnal.gov:8483%s" % path
+            return "https://%s:%s%s" % (self._host, self._sslport, path)
         else:
-            return "http://samweb.fnal.gov:8480%s" % path
+            return "http://%s:%s%s" % (self._host, self._port, path)
 
     baseurl = property(get_baseurl)
 
