@@ -11,6 +11,10 @@ def get_client(*args, **kwargs):
 
 import sys
 
+# it might be a good idea to verify the server, but at the moment we never send sensitive data. So shut it up.
+from requests.packages import urllib3
+urllib3.disable_warnings()
+
 class RequestsHTTPClient(SAMWebHTTPClient):
 
     def __init__(self, verbose=False, *args, **kwargs):
