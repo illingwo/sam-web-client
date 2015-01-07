@@ -3,7 +3,7 @@ from urllib import urlencode, quote, quote_plus
 import urllib2,httplib
 from urllib2 import urlopen, URLError, HTTPError, Request
 
-import time,os, socket, sys, optparse, user, pwd
+import time,os, socket, sys, optparse, user, pwd, signal
 
 from samweb_client import *
 
@@ -1068,6 +1068,9 @@ def main(args=None):
 
     # verbose mode
     samweb.verbose = (options.verbose or cmdoptions.verbose)
+
+    # since the commands may be used in unix filters, don't fail on SIGPIPE
+    signal.signal(signal.SIGPIPE,signal.SIG_DFL)
 
     try:
         return command.run(cmdoptions, args)
