@@ -19,16 +19,21 @@ def _get_from():
 
 
 class SAMWebHTTPClient(object):
-    maxtimeout=60*30 # default max timeout
+    maxtimeout=60*60 # default max timeout
     maxretryinterval = 60 # default max retry interval
     verbose = False # Full verbose mode
     verboseretries = True # whether to print output when retrying
 
     _default_headers = { 'Accept' : 'application/json', 'From' : _get_from()}
 
-    def __init__(self, maxtimeout=None, maxretryinterval=None, verbose=None, verboseretries=None, *args, **kwargs):
+    def __init__(self, maxtimeout=None, maxretryinterval=None, verbose=None, verboseretries=None, socket_timeout=None, *args, **kwargs):
         if maxtimeout is not None:
             self.maxtimeout = maxtimeout
+        if socket_timeout is not None:
+            self.socket_timeout = socket_timeout
+        else:
+            self.socket_timeout = self.maxtimeout
+
         if maxretryinterval is not None:
             self.maxretryinterval = maxretryinterval
         if verboseretries is not None:
@@ -48,6 +53,16 @@ class SAMWebHTTPClient(object):
             self._default_headers['Timezone'] = str(tz)
 
     timezone = property(get_timezone, set_timezone)
+
+    def get_socket_timeout(self):
+        return self._socket_timeout
+    def set_socket_timeout(self, timeout):
+        # the timeout parameter is only supported in 2.6 onwards
+        if sys.version_info >= (2,6):
+            self._socket_timeout = timeout
+        else:
+            self._socket_timeout = None
+    socket_timeout = property(get_socket_timeout, set_socket_timeout)
 
     def make_ssl_error(self, msg):
         """ Try to make sense of ssl errors and return a suitable exception object """

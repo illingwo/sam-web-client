@@ -175,6 +175,10 @@ class SAMWebClient(object):
 
     verbose = property(get_verbose, set_verbose)
 
+    def get_socket_timeout(self): return self.http_client.socket_timeout
+    def set_socket_timeout(self, timeout): self.http_client.socket_timeout = timeout
+    socket_timeout = property(get_socket_timeout, set_socket_timeout)
+
 def samweb_method(m):
     """ Attach this function as a method of the SAMWebClient class """
     setattr(SAMWebClient, m.func_name, m)

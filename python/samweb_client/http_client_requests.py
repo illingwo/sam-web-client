@@ -51,6 +51,9 @@ class RequestsHTTPClient(SAMWebHTTPClient):
         
         kwargs['headers'] = headers
 
+        if self.socket_timeout is not None:
+            kwargs['timeout'] = self.socket_timeout
+
         self._logMethod( method, url, params=kwargs.get("params"), data=kwargs.get("data"))
 
         self._make_session()

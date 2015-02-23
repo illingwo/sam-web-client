@@ -156,9 +156,12 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         request = RequestWithMethod(url, method=method, headers=request_headers)
         if data is not None:
             request.add_data(data)
+        kwargs = {}
+        if self.socket_timeout is not None:
+            kwargs['timeout'] = self.socket_timeout
         while True:
             try:
-                return Response(self._opener.open(request), stream=stream)
+                return Response(self._opener.open(request, **kwargs), stream=stream)
             except HTTPError, x:
                 #python 2.4 treats 201 and up as errors instead of normal return codes
                 if 201 <= x.code <= 299:
