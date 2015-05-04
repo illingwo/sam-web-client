@@ -614,9 +614,10 @@ class getNextFileCmd(ProcessCmd):
 
 class releaseFileCmd(ProcessCmd):
     name = "release-file"
-    description = "Release a file from a process"
+    description = "Release a file from a process. If status is 'ok' his is the same as update-file-status with status = 'consumed', "\
+            "else it is the same as update-file-status with status = 'skipped'"
     args = "(<process url> | <project url> <process id>) <file name>"
-    options = [ "status=" ]
+    options = [ ("status=", "The status to set; the default is 'ok'") ]
 
     def run(self, options, args):
         try:
@@ -624,11 +625,26 @@ class releaseFileCmd(ProcessCmd):
         except IndexError:
             raise CmdError("No project and file name arguments")
         processurl = self.makeProcessUrl(args)
-        #if len(args) != 1:
-        #    raise CmdError("Must specify filename")
         status = options.status
         if not status: status = 'ok'
         self.samweb.releaseFile(processurl, filename, status)
+
+class setProcessFileStatusCmd(ProcessCmd):
+    name = "set-process-file-status"
+    description = "Update the status of a file in a process"
+    args = "(<process url> | <project url> <process id>) <file name> <status>"
+
+    def run(self, options, args):
+        try:
+            status = args.pop()
+        except IndexError:
+            raise CmdError("No status argument")
+        try:
+            filename = args.pop()
+        except IndexError:
+            raise CmdError("No project and file name arguments")
+        processurl = self.makeProcessUrl(args)
+        self.samweb.setProcessFileStatus(processurl, filename, status)
 
 class stopProcessCmd(ProcessCmd):
     name = 'stop-process'

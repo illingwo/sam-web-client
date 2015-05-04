@@ -145,10 +145,18 @@ def getNextFile(samweb, processurl, timeout=None):
                 output["filename"] = os.path.basename(output["url"])
             return output
 
+# old method
 @samweb_method
 def releaseFile(samweb, processurl, filename, status="ok"):
+    if status == "ok": status = "consumed"
+    else: status = "skipped"
+    return samweb.setProcessFileStatus(processurl, filename, status)
+
+# new method
+@samweb_method
+def setProcessFileStatus(samweb, processurl, filename, status="consumed"):
     args = { 'filename' : filename, 'status':status }
-    return samweb.postURL(processurl + '/releaseFile', args).text.rstrip()
+    return samweb.postURL(processurl + '/updateFileStatus', args).text.rstrip()
 
 @samweb_method
 def stopProcess(samweb, processurl):
