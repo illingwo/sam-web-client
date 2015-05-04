@@ -5,12 +5,12 @@ from samweb_client.exceptions import *
 
 def _get_from():
     import pwd,socket
-    username = os.environ.get('USER')
+    username = os.environ.get('GRID_USER', os.environ.get('USER'))
     if not username:
         try:
             username = pwd.getpwuid(os.getuid()).pw_name
         except:
-            username = '<unknown>'
+            username = 'unknown'
     try:
         return '%s@%s' % (username, socket.getfqdn())
     except:
