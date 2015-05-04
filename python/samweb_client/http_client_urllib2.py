@@ -79,6 +79,23 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
             self.cert = self.key = cert
         else:
             self.cert, self.key = cert
+        try:
+            # python 2.7.9 support
+            from ssl import create_default_context, CERT_NONE
+            """ could allow verification with something like
+            context = create_default_context(capath="/etc/grid-security/certificates")
+            """
+            context = create_default_context()
+            # disable certificate verification
+            context.check_hostname = False
+            context.verify_mode = CERT_NONE
+
+            # load the client cert
+            context.load_cert_chain(self.cert, self.key)
+            self.connargs = { 'context' : context }
+        except ImportError:
+            # older python
+            self.connargs = { "key_file" : self.key, "cert_file" : self.cert }
 
     def https_open(self, req):
         # Rather than pass in a reference to a connection class, we pass in
@@ -87,7 +104,7 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=300):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+        return httplib.HTTPSConnection(host, **self.connargs)
 
 class HTTP307RedirectHandler(urllib2.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
