@@ -102,17 +102,21 @@ class SAMWebHTTPClient(object):
         #return a copy as the user may modify it
         return dict(self._default_headers)
 
+    def _logger(self, *args):
+        if self.verbose:
+            sys.stderr.write('%s %s\n' % (datetime.now().isoformat(), ' '.join(str(a) for a in args)))
+
     def _logMethod(self, method, url, params=None, data=None):
         if self.verbose:
-            sys.stderr.write("%s %s %s" % (datetime.now().isoformat(), method, url))
+            msg = [method, url]
             if params:
-                sys.stderr.write(" params=%s" % params)
+                msg.append("params=%s" % params)
             if data:
                 if isinstance(data, dict):
-                    sys.stderr.write(" data=%s" % data)
+                    msg.append("data=%s" % data)
                 else:
-                    sys.stderr.write(" data=<%d bytes>" % len(data))
-            sys.stderr.write("\n")
+                    msg.append("data=<%d bytes>" % len(data))
+            self._logger(*msg)
 
     def postURL(self, url, data=None, content_type=None, **kwargs):
         return self._doURL(url, method='POST', data=data, content_type=content_type, **kwargs)

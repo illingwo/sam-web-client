@@ -107,31 +107,51 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return httplib.HTTPSConnection(host, **self.connargs)
 
 class HTTP307RedirectHandler(urllib2.HTTPRedirectHandler):
+
+    # We want to keep trying if the redirect provokes an error
+    max_repeats = sys.maxint
+
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         m = req.get_method()
-        if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
-            or code in (301, 302, 303) and m == "POST"):
+        try:
+            logger = req.logger
+        except AttributeError:
+            pass
+
+        if code in (301, 302, 303):
             # Strictly (according to RFC 2616), 301 or 302 in response
             # to a POST MUST NOT cause a redirection without confirmation
             # from the user (of urllib2, in this case).  In practice,
             # essentially all clients do redirect in this case, so we
             # do the same.
-            return Request(newurl,
+            logger("HTTP", code, "redirect to GET", newurl)
+            return LoggingRequest(newurl,
                            headers=req.headers,
                            origin_req_host=req.get_origin_req_host(),
-                           unverifiable=True)
-        elif code==307:
-            newreq = RequestWithMethod(newurl, method=req.get_method(), headers=req.headers, origin_req_host=req.get_origin_req_host(), unverifiable=True)
+                           unverifiable=True, logger=logger)
+        elif code in (307, 308):
+            logger("HTTP", code, "redirect to", req.get_method(), newurl)
+            newreq = RequestWithMethod(newurl, method=req.get_method(), headers=req.headers, origin_req_host=req.get_origin_req_host(), unverifiable=True, logger=logger)
             if req.get_data() is not None: newreq.add_data(req.get_data())
             return newreq
-
         else:
             raise HTTPError(req.get_full_url(), code, msg, headers, fp)
 
-class RequestWithMethod(urllib2.Request):
+    # 308 should be handles the same way as 307
+    http_error_308 = urllib2.HTTPRedirectHandler.http_error_307
+
+class LoggingRequest(urllib2.Request):
+    def __init__(self, *args, **kwargs):
+        self.logger = kwargs.pop('logger', self._nulllogger)
+        urllib2.Request.__init__(self, *args, **kwargs)
+    @staticmethod
+    def _nulllogger(*args):
+        return
+
+class RequestWithMethod(LoggingRequest):
     def __init__(self, *args, **kwargs):
         self._method = kwargs.pop('method', None)
-        urllib2.Request.__init__(self, *args, **kwargs)
+        LoggingRequest.__init__(self, *args, **kwargs)
 
     def get_method(self):
         return self._method or urllib2.Request.get_method(self)
@@ -170,7 +190,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         tmout = time.time() + self.maxtimeout
         retryinterval = 1
 
-        request = RequestWithMethod(url, method=method, headers=request_headers)
+        request = RequestWithMethod(url, method=method, headers=request_headers, logger=self._logger)
         if data is not None:
             request.add_data(data)
         kwargs = {}

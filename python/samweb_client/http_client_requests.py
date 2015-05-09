@@ -64,6 +64,9 @@ class RequestsHTTPClient(SAMWebHTTPClient):
         while True:
             try:
                 response = self._session.request(method, url, *args, **kwargs)
+                if response.history:
+                    # if multiple redirects just report the last one
+                    self._logger("HTTP", response.history[-1].status_code, "redirect to", response.url)
                 if 200 <= response.status_code < 300:
                     return response
                 else:
