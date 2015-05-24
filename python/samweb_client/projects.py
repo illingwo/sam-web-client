@@ -277,10 +277,11 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
 
     def runProcess():
         cpid = samweb.startProcess(projecturl, appFamily, appName, appVersion, deliveryLocation, node=node, description=process_description, maxFiles=maxFiles, schemas=schemas)
+        write("Started consumer processs ID %s\n" % (cpid,))
         if nparallel > 1: 
-            prefix = '%s: ' % threading.currentThread().getName()
-        else: prefix=''
-        write("%sStarted consumer processs ID %s\n" % (prefix,cpid))
+            threading.currentThread().setName('CPID-%s' % cpid)
+            log_prefix = '%s: ' % threading.currentThread().getName()
+        else: log_prefix=''
 
         processurl = samweb.makeProcessUrl(projecturl, cpid)
 
@@ -290,7 +291,7 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
                 try:
                     rval = callback(newfile)
                 except Exception, ex:
-                    write('%s%s\n' % (prefix,ex))
+                    write('%s%s\n' % (log_prefix,ex))
                     rval = 1
             except NoMoreFiles:
                 break
@@ -316,8 +317,8 @@ def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callbac
     return projectname
 
 @samweb_method
-def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=None, deliveryLocation=None, node=None, nparallel=1):
-    """ Prestage the given dataset. If the provided locations are WebDAV, it will try to read a couple of bytes from each file """
+def prestageDataset(samweb, projectname=None, defname=None, snapshot_id=None, maxFiles=0, station=None, deliveryLocation=None, node=None, nparallel=1):
+    """ Prestage the given dataset. This is really the same as run-project with names set appropriately """
 
     if nparallel is None or nparallel < 2: nparallel = 1
 
@@ -327,27 +328,17 @@ def prestageDataset(samweb, defname=None, snapshot_id=None, maxFiles=0, station=
             prefix = '%s: ' % threading.currentThread().getName()
         else:
             prefix = ''
-        if not fileurl.startswith('https'):
-            print '%sNot an https url: %s' % (prefix, fileurl)
-            return False
-        cmd = ["curl", "-s", "-f", "-o", "/dev/null", "-L", "-r", "0-1", "--tlsv1", "--capath", samweb.http_client.get_ca_dir() , "--cert", samweb.http_client.get_cert(), "--cacert", samweb.http_client.get_cert(), fileurl]
-        print "%sGot file url: %s\n%sWill execute:\n%s%s" % (prefix, fileurl, prefix, prefix, ' '.join(cmd))
-        import subprocess
-        rval = subprocess.call(cmd,stdout=None)
-        if rval == 0:
-            print "%sFile %s is staged" % (prefix, os.path.basename(fileurl))
-            return True
-        else:
-            print "%sFailed to access file %s" % (prefix,fileurl)
-            return False
+        print "%sFile %s is staged" % (prefix, os.path.basename(fileurl))
+        return True
 
-    projectname = 'prestage'
-    if defname:
-        projectname = samweb.makeProjectName('%s_%s' % (defname, projectname))
-    elif snapshot_id:
-        projectname = samweb.makeProjectName('snapshot_id_%d_%s' % (snapshot_id, projectname))
+    if not projectname:
+        projectname = 'prestage'
+        if defname:
+            projectname = samweb.makeProjectName('%s_%s' % (defname, projectname))
+        elif snapshot_id:
+            projectname = samweb.makeProjectName('snapshot_id_%d_%s' % (snapshot_id, projectname))
 
-    samweb.runProject(projectname=projectname, defname=defname, snapshot_id=snapshot_id, schemas="https",
+    samweb.runProject(projectname=projectname, defname=defname, snapshot_id=snapshot_id,
             application=('prestage','prestage',get_version()), callback=prestage, maxFiles=maxFiles,
             station=station, deliveryLocation=deliveryLocation, node=node, nparallel=nparallel)
 
