@@ -245,12 +245,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
 
     def use_client_certificate(self, cert=None, key=None):
         """ Use the given certificate and key for client ssl authentication """
-        if not cert:
-            cert = self.get_standard_certificate_path()
-        if cert and not key:
-            key = cert
-        if cert:
-            self._opener = urllib2.build_opener(HTTPSClientAuthHandler((cert,key)), HTTP307RedirectHandler )
-            self._cert = cert
+        SAMWebHTTPClient.use_client_certificate(self, cert, key)
+        self._opener = urllib2.build_opener(HTTPSClientAuthHandler(self._cert), HTTP307RedirectHandler )
 
 __all__ = [ 'get_client' ]

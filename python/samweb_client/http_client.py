@@ -92,6 +92,16 @@ class SAMWebHTTPClient(object):
                 cert = proxypath
         return cert
 
+    def use_client_certificate(self, cert=None, key=None):
+        """ Use the given certificate and key for client ssl authentication """
+        if cert:
+            if key:
+                self._cert = (cert, key)
+            else:
+                self._cert = cert
+        else:
+            self._cert = self.get_standard_certificate_path()
+
     def get_cert(self):
         return self._cert
 

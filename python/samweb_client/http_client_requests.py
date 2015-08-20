@@ -29,13 +29,7 @@ class RequestsHTTPClient(SAMWebHTTPClient):
             self._session.cert = self._cert
 
     def use_client_certificate(self, cert=None, key=None):
-        if cert:
-            if key:
-                self._cert = (cert, key)
-            else:
-                self._cert = cert
-        else:
-            self._cert = self.get_standard_certificate_path()
+        SAMWebHTTPClient.use_client_certificate(self, cert, key)
         self._session = None # This will clear any existing session with a different cert
 
     def _doURL(self, url, method="GET", content_type=None, role=None, *args, **kwargs):
