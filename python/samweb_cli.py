@@ -51,7 +51,7 @@ def _file_list_str_gen(g, fileinfo):
 
 class listFilesCmd(CmdBase):
     name = "list-files"
-    options = [ ("parse-only", "Return parser output for these dimensions instead of evaluating them"),
+    options = [ ("dump-query", "Return query information for these dimensions instead of evaluating them"),
                 ("fileinfo", "Return additional information for each file"),
                 ("summary", "Return a summary of the results instead of the full list"),
                 ("help-dimensions", "Return information on the available dimensions"),
@@ -68,8 +68,10 @@ class listFilesCmd(CmdBase):
         dims = (' '.join(args)).strip()
         if not dims:
             raise CmdError("No dimensions specified")
-        if options.parse_only:
-            print self.samweb.parseDims(dims)
+        if options.dump_query:
+            if options.summary: mode = 'summary'
+            else: mode = None
+            print self.samweb.parseDims(dims, mode)
         elif options.summary:
             summary = self.samweb.listFilesSummary(dims)
             print _file_list_summary_str(summary)
@@ -80,6 +82,7 @@ class listFilesCmd(CmdBase):
 
 class countFilesCmd(CmdBase):
     name = "count-files"
+    options = [ ("dump-query", "Return parser output for these dimensions instead of evaluating them"), ]
     description = "Count files by dimensions query"
     args = "<dimensions query>"
     cmdgroup = 'datafiles'
@@ -87,7 +90,10 @@ class countFilesCmd(CmdBase):
         dims = (' '.join(args)).strip()
         if not dims:
             raise CmdError("No dimensions specified")
-        print self.samweb.countFiles(dims)
+        if options.dump_query:
+            print self.samweb.parseDims(dims, mode='count')
+        else:
+            print self.samweb.countFiles(dims)
 
 class locateFileCmd(CmdBase):
     name = "locate-file"

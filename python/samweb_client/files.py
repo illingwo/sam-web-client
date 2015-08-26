@@ -89,10 +89,23 @@ def listFilesSummary(samweb, dimensions=None, defname=None):
     return convert_from_unicode(result.json())
 
 @samweb_method
-def parseDims(samweb, dimensions):
+def parseDims(samweb, dimensions, mode=False):
     """ For debugging only """
-    params = { "parse_only": "1"}
-    result = samweb._callDimensions('/files/list', dimensions, params)
+    if not mode:
+        params = { "parse_only": "1"}
+        result = samweb._callDimensions('/files/list', dimensions, params)
+    else:
+        params = { "diagnostics" : "1" }
+        if mode=='count':
+            path = '/files/count'
+        elif mode=='summary':
+            path = '/files/summary'
+        elif mode=='fileinfo':
+            params['fileinfo']="1"
+            path = '/files/list'
+        else:
+            path = '/files/list'
+        result = samweb._callDimensions(path, dimensions, params)
     return result.text.rstrip()
 
 @samweb_method
