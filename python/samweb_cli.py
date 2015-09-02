@@ -201,6 +201,7 @@ class calculateChecksumCmd(CmdBase):
     args = "<path to file> [<path to file> [...]]"
     options = [ ('old', 'Return output in old metadata format'),
             ('type=', 'Comma separated list of checksum types'),
+            ('list-types', 'List available algorithms. (Depending on the underlying version of python this list may not be exhaustive).')
             ]
     cmdgroup = 'utility'
 
@@ -208,6 +209,11 @@ class calculateChecksumCmd(CmdBase):
         parser.add_option("--type", action="append", dest="type", help="Comma separated list of checksum types" )
 
     def run(self, options, args):
+        if options.list_types:
+            from samweb_client.utility import list_checksum_algorithms
+            for a in list_checksum_algorithms():
+                print a
+            return
         if not args:
             raise CmdError("No file paths provided")
 

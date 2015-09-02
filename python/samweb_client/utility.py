@@ -55,27 +55,31 @@ def enstoreChecksum(fileobj):
 # Don't create the algorithm classes unless they are actually needed
 
 _Adler32 = None
-def _make_adler32(startval=None):
+def _make_adler32(startval=None, hex_output=True):
     global _Adler32
     import zlib
-    if _Adler32:return _Adler32(startval)
 
-    class _Adler32(object):
-        def __init__(self, startval=None):
-            if startval is not None:
-                self._value = zlib.adler32('', startval)
-            else:
-                self._value = zlib.adler32('')
-        def update(self, data):
-            self._value = zlib.adler32(data, self._value)
-        def value(self):
-            crc = long(self._value)
-            if crc < 0:
-                # Return 32 bit unsigned value
-                crc  = (crc & 0x7FFFFFFFL) | 0x80000000L
-            return crc
+    if not _Adler32:
+        class _Adler32(object):
+            def __init__(self, startval=None, hex_output=hex_output):
+                if startval is not None:
+                    self._value = zlib.adler32('', startval)
+                else:
+                    self._value = zlib.adler32('')
+                self._hex = hex_output
+            def update(self, data):
+                self._value = zlib.adler32(data, self._value)
+            def value(self):
+                crc = long(self._value)
+                if crc < 0:
+                    # Return 32 bit unsigned value
+                    crc  = (crc & 0x7FFFFFFFL) | 0x80000000L
+                if self._hex:
+                    return '%08x' % crc
+                else:
+                    return crc
 
-    return _Adler32(startval)
+    return _Adler32(startval, hex_output)
 
 _Hasher = None
 def _make_hash(algorithm):
@@ -112,9 +116,22 @@ def _make_hash(algorithm):
 def _get_checksum_algorithm(algorithm):
 
     if algorithm == 'enstore':
-        return _make_adler32(0)
+        return _make_adler32(0, hex_output=False)
     elif algorithm == 'adler32':
         return _make_adler32()
     else:
         return _make_hash(algorithm)
 
+def list_checksum_algorithms():
+    algos = set(['enstore', 'adler32'])
+    try:
+        import hashlib
+        if hasattr(hashlib, 'algorithms_available'):
+            algos.update(hashlib.algorithms_available)
+        elif hasattr(hashlib, 'algorithms'):
+            algos.update(hashlib.algorithms)
+        else:
+            algos.update(['md5','sha1','sha224', 'sha256', 'sha384', 'sha512'])
+    except ImportError:
+        algos.update(['md5','sha1',])
+    return algos
