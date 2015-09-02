@@ -1,3 +1,18 @@
+v2_0:
+
+The file-checksum command now prints the new format checksum instead of the legacy
+format, and has the option to use multiple algorithms.
+
+Bug #7528: start-process gives no way to override the username
+Bug #7575: Ungraceful handling of SIGPIPE
+Bug #8280: SSL connections fail on python 2.7.9
+Bug #9855: Cert/key authentication with environment variables crashes.
+Feature #7568: Add environment variables to control host and ports
+Feature #7569: Support new checksum formats
+Feature #7928: Add socket timeout
+Feature #8591: Add set-process-file-status command and interface
+Feature #8592: Use GRID_USER to guess the username if it is set
+
 v1_9:
 
 All commands now accept a --timezone/-z option.
