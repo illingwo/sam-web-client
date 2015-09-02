@@ -4,7 +4,7 @@ version=${1:?Need to specify release version}
 
 # check upd is available
 
-type -t upd || { echo "upd is not available"; exit 1; }
+type -t upd > /dev/null || { echo "upd is not available"; exit 1; }
 
 git tag -a -m "Release $version" $version || exit 1
 make dist || exit 1
