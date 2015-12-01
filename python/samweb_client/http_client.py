@@ -3,20 +3,23 @@ import sys, os
 from datetime import datetime
 from samweb_client.exceptions import *
 
-def _get_from():
-    import pwd,socket
+def get_username():
     username = os.environ.get('GRID_USER', os.environ.get('USER'))
     if not username:
         try:
+            import pwd
             username = pwd.getpwuid(os.getuid()).pw_name
         except:
             username = 'unknown'
+    return username
+
+def _get_from():
+    import socket
+    username = get_username()
     try:
         return '%s@%s' % (username, socket.getfqdn())
     except:
         return username
-
-
 
 class SAMWebHTTPClient(object):
     maxtimeout=60*60 # default max timeout

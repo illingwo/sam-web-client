@@ -132,7 +132,7 @@ class SAMWebClient(object):
     station = property(get_station, set_station)
 
     def get_user(self):
-        return pwd.getpwuid(os.getuid()).pw_name
+        return http_client.get_username()
 
     user = property(get_user)
 
