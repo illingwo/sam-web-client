@@ -55,11 +55,12 @@ def createDefinition(samweb, defname, dims, user=None, group=None, description=N
 
     params = { "defname": defname,
              "dims": dims,
-             "user": user or samweb.user,
              "group": group or samweb.group,
              }
     if description:
         params["description"] = description
+    if user:
+        params["user"] = user
 
     result = samweb.postURL('/definitions/create', params, secure=True)
     return result.json()
