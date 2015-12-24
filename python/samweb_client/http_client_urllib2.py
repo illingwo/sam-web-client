@@ -190,7 +190,7 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
             if '?' not in url: url += '?'
             else: url += '&'
             url += urlencode(params, doseq=True)
-        tmout = time.time() + self.maxtimeout
+        tmout = time.time() + self.max_timeout
         retryinterval = 1
 
         request = RequestWithMethod(url, method=method, headers=request_headers, logger=self._logger)

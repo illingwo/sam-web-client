@@ -1008,7 +1008,8 @@ def main(args=None):
     base_options.add_option('-s','--secure', action="store_true", dest='secure', default=False, help='always use secure (SSL) mode')
     base_options.add_option('--cert', dest='cert', help='x509 certificate for authentication. If not specified, use $X509_USER_PROXY, $X509_USER_CERT/$X509_USER_KEY or standard grid proxy location')
     base_options.add_option('--key', dest='key', help='x509 key for authentication (defaults to same as certificate)')
-    base_options.add_option('--socket-timeout', dest='socket_timeout', type=float, help='set the socket timeout (max time for data to be sent or received')
+    base_options.add_option('--max-timeout', dest='max_timeout', type=int, help='set the max timeout in seconds (After this period even retriable errors will fail. This setting will not interrupt an active connection; use socket-timeout for that.)')
+    base_options.add_option('--socket-timeout', dest='socket_timeout', type=int, help='set the socket timeout in seconds (max time for data to be sent or received)')
     base_options.add_option('-r', '--role', dest='role', help='specific role to use for authorization')
     base_options.add_option('-z', '--timezone', dest='timezone', help='set time zone for server responses')
     base_options.add_option('-v','--verbose', action="store_true", dest='verbose', default=False, help="Verbose mode")
@@ -1081,6 +1082,9 @@ def main(args=None):
 
     if options.secure or cmdoptions.secure:
         samweb.secure = True
+
+    if options.max_timeout is not None: samweb.max_timeout = options.max_timeout
+    if cmdoptions.max_timeout is not None: samweb.max_timeout = cmdoptions.max_timeout
 
     if options.socket_timeout is not None: samweb.socket_timeout = options.socket_timeout
     if cmdoptions.socket_timeout is not None: samweb.socket_timeout = cmdoptions.socket_timeout

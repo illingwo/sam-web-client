@@ -175,6 +175,10 @@ class SAMWebClient(object):
 
     verbose = property(get_verbose, set_verbose)
 
+    def get_max_timeout(self): return self.http_client.max_timeout
+    def set_max_timeout(self, timeout): self.http_client.max_timeout = timeout
+    max_timeout = property(get_max_timeout, set_max_timeout)
+
     def get_socket_timeout(self): return self.http_client.socket_timeout
     def set_socket_timeout(self, timeout): self.http_client.socket_timeout = timeout
     socket_timeout = property(get_socket_timeout, set_socket_timeout)

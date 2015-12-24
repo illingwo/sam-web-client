@@ -22,20 +22,20 @@ def _get_from():
         return username
 
 class SAMWebHTTPClient(object):
-    maxtimeout=60*60 # default max timeout
+    max_timeout=6*60*60 # default max timeout
     maxretryinterval = 60 # default max retry interval
     verbose = False # Full verbose mode
     verboseretries = True # whether to print output when retrying
 
     _default_headers = { 'Accept' : 'application/json', 'From' : _get_from()}
 
-    def __init__(self, maxtimeout=None, maxretryinterval=None, verbose=None, verboseretries=None, socket_timeout=None, *args, **kwargs):
-        if maxtimeout is not None:
-            self.maxtimeout = maxtimeout
-        if socket_timeout is not None:
-            self.socket_timeout = socket_timeout
-        else:
-            self.socket_timeout = self.maxtimeout
+    def __init__(self, max_timeout=None, maxretryinterval=None, verbose=None, verboseretries=None, socket_timeout=None, *args, **kwargs):
+        if max_timeout is not None:
+            self.max_timeout = maxtimeout
+        if socket_timeout is None:
+            socket_timeout = 60*60 # default socket timeout
+        self.socket_timeout = socket_timeout
+
 
         if maxretryinterval is not None:
             self.maxretryinterval = maxretryinterval

@@ -52,7 +52,7 @@ class RequestsHTTPClient(SAMWebHTTPClient):
 
         self._make_session()
 
-        tmout = time.time() + self.maxtimeout
+        tmout = time.time() + self.max_timeout
         retryinterval = 1
 
         while True:
