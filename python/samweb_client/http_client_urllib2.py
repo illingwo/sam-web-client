@@ -4,7 +4,7 @@ from urllib import urlencode, quote, quote_plus
 import urllib2,httplib
 from urllib2 import urlopen, URLError, HTTPError, Request
 
-import time, socket, os, sys
+import time, socket, os, sys, zlib
 
 from samweb_client import Error, json
 from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, SAMWebHTTPError
@@ -12,6 +12,27 @@ from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, 
 def get_client():
     # There is no local state, so just return the module
     return URLLib2HTTPClient()
+
+def _read_response(response, chunk_size=128*1024):
+    while True:
+        data = response.read(chunk_size)
+        if not data: break
+        #print>>sys.stderr, 'Read %d bytes' % len(data)
+        yield data
+    response.close()
+
+def _gzip_decoder(iterator):
+    decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    for chunk in iterator:
+        decoded = decoder.decompress(chunk)
+        if decoded:
+            #print>>sys.stderr, 'Decompressed %d bytes' % len(decoded)
+            yield decoded
+    else:
+        decoded = decoder.flush()
+        if decoded:
+            #print>>sys.stderr, 'Decompressed %d bytes' % len(decoded)
+            yield decoded
 
 class Response(object):
     """ Wrapper for the response object. Provides a text attribue that contains the body of the response.
@@ -22,27 +43,26 @@ class Response(object):
     with that. However, it doesn't work with python 2.4, which we need for SL5 support.
     """
 
-    def __init__(self, wrapped, stream=False):
+    def __init__(self, wrapped, logger, stream=False):
         self._wrapped = wrapped
-        if not stream:
-            self._load_data()
-        else:
-            self._data = None
+        self._data = _read_response(self._wrapped)
 
-    def _load_data(self):
-        self._data = self._wrapped.read()
-        self._wrapped.close()
+        # handle zipped content
+        if self.headers.get('Content-Encoding','').lower() == 'gzip':
+            self._data = _gzip_decoder(self._data)
+            logger("Decompressing gzipped response body")
+
+        # if not streaming, load the whole thing now
+        if not stream:
+            self._data = tuple(self._data)
 
     @property
     def text(self):
-        if self._data is not None:
-            return self._data
-        else:
-            try:
-                self._load_data()
-            except Exception, ex:
-                raise Error("Error reading response body: %s" % str(ex))
-            return self._data
+        try:
+            return ''.join(self._data)
+        except Exception, ex:
+            raise Error("Error reading response body: %s" % str(ex))
+
     @property
     def status_code(self):
         return self._wrapped.code
@@ -51,42 +71,35 @@ class Response(object):
         return self._wrapped.headers
 
     def json(self):
-        if self._data is None:
-            try:
-                return json.load(self._wrapped)
-            except ValueError:
-                raise
-            except Exception, ex:
-                raise Error("Error reading response body: %s" % str(ex))
-        else:
-            return json.loads(self._data)
+        # json just does a read() on the file object, so we aren't losing anything
+        # by reading the whole thing into a string
+        return json.loads(self.text)
 
     def iter_lines(self):
-        if self._data is None:
-            try:
-                for l in self._wrapped:
-                    yield l
-            except Exception, ex:
-                raise Error("Error reading response body: %s" % str(ex))
-        else:
-            for l in self._data.split('\n'):
-                yield l
+        pending = None
+        try:
+            for chunk in self.iter_content():
+                if pending is not None:
+                    chunk = pending + chunk
+                lines = chunk.splitlines()
+                if lines and lines[-1] and chunk and lines[-1][-1] == chunk[-1]:
+                    pending = lines.pop()
+                else:
+                    pending = None
+
+                for line in lines:
+                    yield line
+            if pending is not None:
+                yield pending
+        except Exception, ex:
+            raise Error("Error reading response body: %s" % str(ex))
 
     def iter_content(self, chunk_size=1):
-        if self._data is None:
-            try:
-                while True:
-                    d = self._wrapped.read(chunk_size)
-                    if not d: return
-                    yield d
-            except Exception, ex:
-                raise Error("Error reading response body: %s" % str(ex))
-        else:
-            it = iter(self._data)
-            while True:
-                chunk = ''.join(itertools.islice(it, None, chunk_size))
-                if not chunk: return
-                yield chunk
+        # chunk size is currently ignored
+        try:
+            return iter(self._data)
+        except Exception, ex:
+            raise Error("Error reading response body: %s" % str(ex))
 
     def __del__(self):
         try:
@@ -200,6 +213,10 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         if content_type:
             request_headers['Content-Type'] = content_type
 
+        if stream:
+            # only enable gzipped encoding for streamed data since that might be large
+            request_headers['Accept-Encoding'] = 'gzip'
+
         if role is not None:
             request_headers['SAM-Role'] = str(role)
 
@@ -228,11 +245,11 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
             kwargs['timeout'] = self.socket_timeout
         while True:
             try:
-                return Response(self._opener.open(request, **kwargs), stream=stream)
+                return Response(self._opener.open(request, **kwargs), stream=stream, logger=self._logger)
             except HTTPError, x:
                 #python 2.4 treats 201 and up as errors instead of normal return codes
                 if 201 <= x.code <= 299:
-                    return Response(x)
+                    return Response(x, logger=self._logger)
                 if x.headers.get('Content-Type') == 'application/json':
                     err = json.load(x)
                     errmsg = err['message']
