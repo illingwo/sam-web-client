@@ -229,7 +229,8 @@ def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False):
     if file_names: params["file_name"] = file_names
     if file_ids: params["file_id"] = file_ids
     if locations: params["locations"] = 1
-    response = samweb.getURL("/files/metadata", params=params)
+    # use post because the lists cab be large
+    response = samweb.postURL("/files/metadata", data=params)
     if asJSON:
         return response.text.rstrip()
     else:
