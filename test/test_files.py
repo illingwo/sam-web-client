@@ -37,7 +37,7 @@ class TestLocation(testbase.SamdevTest):
     def test_fileUrl(self):
         urls = self.samweb.getFileAccessUrls("MN_00000798_0004_numib_v04_0911090239_RawEvents.root", schema="gsiftp")
         assert set(urls) == set(['gsiftp://fg-bestman1.fnal.gov:2811/grid/data/samdev/data01/MN_00000798_0004_numib_v04_0911090239_RawEvents.root',
-            'gsiftp://fndca1.fnal.gov:2811/rawdata/raw/numib/00/00/07/98/MN_00000798_0004_numib_v04_0911090239_RawEvents.root'])
+            'gsiftp://fndca1.fnal.gov:2811/pnfs/fnal.gov/usr/samdev/rawdata/raw/numib/00/00/07/98/MN_00000798_0004_numib_v04_0911090239_RawEvents.root'])
 
 class TestDefinitionCommands(testbase.SAMWebCmdTest):
 
@@ -59,7 +59,7 @@ class TestLocateCommands(testbase.SAMWebCmdTest):
         self.check_cmd_return(cmdline)
         urls = self.stdout.rstrip().split('\n')
         assert set(urls) == set(['gsiftp://fg-bestman1.fnal.gov:2811/grid/data/samdev/data01/MN_00000798_0004_numib_v04_0911090239_RawEvents.root',
-            'gsiftp://fndca1.fnal.gov:2811/rawdata/raw/numib/00/00/07/98/MN_00000798_0004_numib_v04_0911090239_RawEvents.root'])
+            'gsiftp://fndca1.fnal.gov:2811/pnfs/fnal.gov/usr/samdev/rawdata/raw/numib/00/00/07/98/MN_00000798_0004_numib_v04_0911090239_RawEvents.root'])
 
 if __name__ == '__main__':
     unittest.main()
