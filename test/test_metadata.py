@@ -44,6 +44,13 @@ class TestMetadataSamdev(testbase.SamdevTest):
         assert 'locations' in md
         assert len(md['locations']) > 0
 
+    def test_getMetadataIterator(self):
+        result = list(self.samweb.getMetadataIterator(['MN_00000798_0004_numib_v04_0911090239_RawEvents.root',
+                        'MN_00000798_0005_numib_v04_0911090240_RawEvents.root']))
+        assert len(result) == 2
+        assert set(['MN_00000798_0004_numib_v04_0911090239_RawEvents.root',
+                                    'MN_00000798_0005_numib_v04_0911090240_RawEvents.root']) == set(m["file_name"] for m in result)
+
     def test_validateMetadata(self):
         md = {'file_name' : test_file_name, 'file_type' : 'nonphysicsgeneric', 'file_size' : 1024,
             'data_tier':'raw',}

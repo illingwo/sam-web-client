@@ -22,6 +22,14 @@ def _make_file_info(lines):
             except Exception:
                 raise Error("Error while decoding file list output from server")
 
+def _chunk(iterator, chunksize):
+    """ Helper to divide an iterator into chunks of a given size """
+    from itertools import islice
+    while True:
+        l = list(islice(iterator, chunksize))
+        if l: yield l
+        else: return
+
 @samweb_method
 def getAvailableDimensions(samweb):
     """ List the available dimensions """
@@ -159,6 +167,19 @@ def locateFiles(samweb, filenameorids):
     return convert_from_unicode(response.json())
 
 @samweb_method
+def locateFilesIterator(samweb, iterable, chunksize=50):
+    """ Given an iterable of file names or ids, return an iterable object with
+    (name or id, locations) pairs. This is a convenience wrapper around locateFiles
+    arguments:
+        iterable: iterable object of file names or ids
+        chunksize: the number of files to query on each pass
+    """
+
+    for fs in _chunk(iter(iterable), chunksize):
+        for j in samweb.locateFiles(fs).iteritems():
+            yield j
+
+@samweb_method
 def addFileLocation(samweb, filenameorid, location):
     """ Add a location for a file
     arguments:
@@ -235,6 +256,20 @@ def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False):
         return response.text.rstrip()
     else:
         return convert_from_unicode(response.json())
+
+@samweb_method
+def getMetadataIterator(samweb, iterable, locations=False, chunksize=50):
+    """ Given an iterable of file names or ids, return an iterable object with
+    their metadata. This is a convenience wrapper around getMultipleMetadata
+    arguments:
+        iterable: iterable object of file names or ids
+        locations: if True include location information
+        chunksize: the number of files to query on each pass
+    """
+
+    for fs in _chunk(iter(iterable), chunksize):
+        for md in samweb.getMultipleMetadata(fs, locations=locations):
+            yield md
 
 @samweb_method
 def getMetadataText(samweb, filenameorid, format=None, locations=False):
