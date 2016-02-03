@@ -10,7 +10,7 @@ test_file_name = 'test_file_name' +  str(long(time.time()))
 class TestMetadataSamdev(testbase.SamdevTest):
 
     def test_getMetadata_FileNotFound(self):
-        self.assertRaises(samweb_client.exceptions.FileNotFound, self.samweb.getMetadata, 'foo')
+        self.assertRaises(samweb_client.exceptions.FileNotFound, self.samweb.getMetadata, 'this_file_doesnt_exist')
 
     def test_getMetadata(self):
         md = self.samweb.getMetadata('MN_00000798_0004_numib_v04_0911090239_RawEvents.root')
