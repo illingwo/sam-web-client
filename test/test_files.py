@@ -44,6 +44,16 @@ class TestLocation(testbase.SamdevTest):
         assert set(urls) == set(['gsiftp://fg-bestman1.fnal.gov:2811/grid/data/samdev/data01/MN_00000798_0004_numib_v04_0911090239_RawEvents.root',
             'gsiftp://fndca1.fnal.gov:2811/pnfs/fnal.gov/usr/samdev/rawdata/raw/numib/00/00/07/98/MN_00000798_0004_numib_v04_0911090239_RawEvents.root'])
 
+class TestListLocations(testbase.SamdevTest):
+
+    def test_list_locations(self):
+        dim = 'file_name MN_00000798_0004_numib_v04_0911090239_RawEvents.root, MN_00000798_0005_numib_v04_0911090240_RawEvents.root'
+        locations = list(self.samweb.listFilesAndLocations(dimensions=dim))
+        assert len(locations) == 3
+
+        locations = list(self.samweb.listFilesAndLocations(dimensions=dim, filter_path='samdevdata:'))
+        assert len(locations) == 2
+
 class TestDefinitionCommands(testbase.SAMWebCmdTest):
 
     def test_listDimensions(self):

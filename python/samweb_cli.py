@@ -95,9 +95,24 @@ class countFilesCmd(CmdBase):
         else:
             print self.samweb.countFiles(dims)
 
+class listFileLocationsCmd(CmdBase):
+    name = "list-file-locations"
+    description = "List locations and files matching a query"
+    options = [ ("dimensions=", "Dimension query"), ("defname=", "Definition name"), ("filter-path=", "Comma separated list of path prefixes to filter on"),
+                ("checksums", "Include checksums in output")]
+    cmdgroup = 'datafiles'
+    def run(self, options, args):
+        if options.filter_path:
+            filter_path = options.filter_path.split(',')
+        else:
+            filter_path = None
+        output = self.samweb.listFilesAndLocations(dimensions=options.dimensions, defname=options.defname, filter_path=filter_path, checksums=options.checksums, structured_output=False)
+        for l in output:
+            print l
+
 class locateFileCmd(CmdBase):
     name = "locate-file"
-    description = "List file locations"
+    description = "List locations for a file"
     args = "<file name>"
     cmdgroup = 'datafiles'
     def run(self, options, args):
