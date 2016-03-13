@@ -24,7 +24,7 @@ def _get_from():
 class SAMWebHTTPClient(object):
     max_timeout=6*60*60 # default max timeout
     maxretryinterval = 60 # default max retry interval
-    verbose = False # Full verbose mode
+    _verbose = False # Full verbose mode
     verboseretries = True # whether to print output when retrying
 
     _default_headers = { 'Accept' : 'application/json', 'From' : _get_from()}
@@ -46,6 +46,13 @@ class SAMWebHTTPClient(object):
         self._cert = None
         if 'User-Agent' not in self._default_headers:
             self._default_headers['User-Agent'] = self._get_user_agent()
+
+    def get_verbose(self):
+        return self._verbose
+    def set_verbose(self, verbose):
+        self._verbose = verbose
+        self._logger(self.__class__.__name__, "initialized")
+    verbose = property(get_verbose, set_verbose)
 
     def get_timezone(self):
         return self._default_headers.get('Timezone')
@@ -116,7 +123,7 @@ class SAMWebHTTPClient(object):
         return dict(self._default_headers)
 
     def _logger(self, *args):
-        if self.verbose:
+        if self._verbose:
             sys.stderr.write('%s %s\n' % (datetime.now().isoformat(), ' '.join(str(a) for a in args)))
 
     def _logMethod(self, method, url, params=None, data=None):

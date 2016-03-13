@@ -15,6 +15,47 @@ import sys
 from requests.packages import urllib3
 urllib3.disable_warnings()
 
+# we want to trap requests errors and return a samweb error
+# this can only happen when in streaming mode, so use a proxy object
+class StreamingResponseMethodWrapper(object):
+    def __init__(self, method):
+        self._method = method
+    def __call__(self, *args, **kwargs):
+        try:
+            return self._method(*args, **kwargs)
+        except requests.exceptions.RequestException, ex:
+            raise Error("Error reading response body: %s" % str(ex))
+
+class StreamingResponseWrapper(object):
+    """ Wrap methods that may use streaming to trap exceptions and convert them """
+    def __init__(self, response):
+        self.__dict__['_response'] = response
+
+    def __getattr__(self, name):
+        # get the wrapped attribute, handling any errors
+        # if it's a method, return a proxy that also traps
+        # errors when called
+        from types import MethodType
+        try:
+            attr = getattr(self._response, name)
+        except requests.exceptions.RequestException, ex:
+            raise Error("Error reading response body: %s" % str(ex))
+        if isinstance(attr, MethodType):
+            return StreamingResponseMethodWrapper(attr)
+        else:
+            return attr
+
+    def __setattr__(self, name, value):
+        raise AttributeError("Can't set attributes on proxy")
+    def __delattr__(self, name):
+        raise AttributeError("Can't delete attributes on proxy")
+
+def _wrap_response(response, stream):
+    if stream:
+        return StreamingResponseWrapper(response)
+    else:
+        return response
+
 class RequestsHTTPClient(SAMWebHTTPClient):
 
     def __init__(self, verbose=False, *args, **kwargs):
@@ -32,7 +73,7 @@ class RequestsHTTPClient(SAMWebHTTPClient):
         SAMWebHTTPClient.use_client_certificate(self, cert, key)
         self._session = None # This will clear any existing session with a different cert
 
-    def _doURL(self, url, method="GET", content_type=None, role=None, *args, **kwargs):
+    def _doURL(self, url, method="GET", content_type=None, role=None, stream=False, *args, **kwargs):
         headers = self.get_default_headers()
         if 'headers' in kwargs:
             headers.update(kwargs['headers'])
@@ -57,12 +98,12 @@ class RequestsHTTPClient(SAMWebHTTPClient):
 
         while True:
             try:
-                response = self._session.request(method, url, *args, **kwargs)
+                response = self._session.request(method, url, stream=stream, *args, **kwargs)
                 if response.history:
                     # if multiple redirects just report the last one
                     self._logger("HTTP", response.history[-1].status_code, "redirect to", response.url)
                 if 200 <= response.status_code < 300:
-                    return response
+                    return _wrap_response(response, stream)
                 else:
                     # something went wrong
                     if 'application/json' in response.headers['Content-Type']:

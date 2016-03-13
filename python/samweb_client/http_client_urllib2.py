@@ -38,7 +38,10 @@ class Response(object):
         if self._data is not None:
             return self._data
         else:
-            self._load_data()
+            try:
+                self._load_data()
+            except Exception, ex:
+                raise Error("Error reading response body: %s" % str(ex))
             return self._data
     @property
     def status_code(self):
@@ -49,17 +52,41 @@ class Response(object):
 
     def json(self):
         if self._data is None:
-            return json.load(self._wrapped)
+            try:
+                return json.load(self._wrapped)
+            except ValueError:
+                raise
+            except Exception, ex:
+                raise Error("Error reading response body: %s" % str(ex))
         else:
             return json.loads(self._data)
 
     def iter_lines(self):
         if self._data is None:
-            for l in self._wrapped:
-                yield l
+            try:
+                for l in self._wrapped:
+                    yield l
+            except Exception, ex:
+                raise Error("Error reading response body: %s" % str(ex))
         else:
             for l in self._data.split('\n'):
                 yield l
+
+    def iter_content(self, chunk_size=1):
+        if self._data is None:
+            try:
+                while True:
+                    d = self._wrapped.read(chunk_size)
+                    if not d: return
+                    yield d
+            except Exception, ex:
+                raise Error("Error reading response body: %s" % str(ex))
+        else:
+            it = iter(self._data)
+            while True:
+                chunk = ''.join(itertools.islice(it, None, chunk_size))
+                if not chunk: return
+                yield chunk
 
     def __del__(self):
         try:
