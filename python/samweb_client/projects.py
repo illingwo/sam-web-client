@@ -14,7 +14,7 @@ def listProjects(samweb, stream=False, **queryCriteria):
     """
     params = dict(queryCriteria)
     params['format'] = 'plain'
-    result = samweb.getURL('/projects', params, stream=True)
+    result = samweb.getURL('/projects', params, stream=True, compress=True)
     output = ifilter( None, (l.strip() for l in result.iter_lines()) )
     if stream: return output
     else: return list(output)
@@ -53,7 +53,7 @@ def startProject(samweb, project, defname=None, station=None, group=None, user=N
     if   defname: args["defname"] = defname
     elif snapshot_id: args["snapshot_id"] = snapshot_id
     if user: args["username"] = user
-    result = samweb.postURL('/startProject', args, secure=True)
+    result = samweb.postURL('/startProject', args, secure=True, compress=False)
     projecturl = result.text.strip()
     if projecturl.startswith('https'):
         # prefer to use unencrypted project urls
@@ -69,7 +69,7 @@ def startProject(samweb, project, defname=None, station=None, group=None, user=N
 def findProject(samweb, project, station=None):
     args = {'name':project}
     if station: args['station'] = station
-    result = samweb.getURL('/findProject', args)
+    result = samweb.getURL('/findProject', args, compress=False)
     return result.text.strip()
 
 @samweb_method
@@ -97,7 +97,7 @@ def startProcess(samweb, projecturl, appfamily, appname, appversion, deliveryLoc
         args["description"] = description
     if schemas:
         args["schemas"] = schemas
-    result = samweb.postURL(projecturl + '/establishProcess', args)
+    result = samweb.postURL(projecturl + '/establishProcess', args, compress=False)
     return result.text.strip()
 
 @samweb_method
@@ -117,7 +117,7 @@ def getNextFile(samweb, processurl, timeout=None):
     url = processurl + '/getNextFile'
     starttime = time.time()
     while True:
-        result= samweb.postURL(url, data={})
+        result= samweb.postURL(url, data={}, compress=False)
         code = result.status_code
         data = result.text.strip()
         if code == 202:
@@ -156,31 +156,31 @@ def releaseFile(samweb, processurl, filename, status="ok"):
 @samweb_method
 def setProcessFileStatus(samweb, processurl, filename, status="consumed"):
     args = { 'filename' : filename, 'status':status }
-    return samweb.postURL(processurl + '/updateFileStatus', args).text.rstrip()
+    return samweb.postURL(processurl + '/updateFileStatus', args, compress=False).text.rstrip()
 
 @samweb_method
 def stopProcess(samweb, processurl):
     """ End an existing process """
-    samweb.postURL(processurl + '/endProcess')
+    samweb.postURL(processurl + '/endProcess', compress=False)
 
 @samweb_method
 def stopProject(samweb, projecturl):
     if not '://' in projecturl:
         projecturl = samweb.findProject(projecturl)
     args = { "force" : 1 }
-    return samweb.postURL(projecturl + "/endProject", args).text.rstrip()
+    return samweb.postURL(projecturl + "/endProject", args, compress=False).text.rstrip()
 
 @samweb_method
 def projectSummary(samweb, projecturl):
     if not '://' in projecturl:
         projecturl = '/projects/name/%s' % escape_url_path(projecturl)
-    return convert_from_unicode(samweb.getURL(projecturl + "/summary").json())
+    return convert_from_unicode(samweb.getURL(projecturl + "/summary").json(), compress=True)
 
 @samweb_method
 def projectSummaryText(samweb, projecturl):
     if not '://' in projecturl:
         projecturl = '/projects/name/%s' % escape_url_path(projecturl)
-    return samweb.getURL(projecturl + "/summary", params=dict(format='plain')).text.rstrip()
+    return samweb.getURL(projecturl + "/summary", params=dict(format='plain'), compress=True).text.rstrip()
 
 @samweb_method
 def projectRecoveryDimension(samweb, projectnameorurl, useFileStatus=None, useProcessStatus=None):
@@ -195,7 +195,7 @@ def projectRecoveryDimension(samweb, projectnameorurl, useFileStatus=None, usePr
     params = { "format" : "plain" }
     if useFileStatus is not None: params['useFiles'] = useFileStatus
     if useProcessStatus is not None: params['useProcess'] = useProcessStatus
-    return convert_from_unicode(samweb.getURL(projectnameorurl + "/recovery_dimensions", params=params).text.rstrip())
+    return convert_from_unicode(samweb.getURL(projectnameorurl + "/recovery_dimensions", params=params, compress=True).text.rstrip())
 
 @samweb_method
 def setProcessStatus(samweb, status, projectnameorurl, processid=None, process_desc=None):
@@ -222,7 +222,7 @@ def setProcessStatus(samweb, status, projectnameorurl, processid=None, process_d
         # assume direct process url
         pass
 
-    return samweb.putURL(url + "/status", args, secure=True).text.rstrip()
+    return samweb.putURL(url + "/status", args, secure=True, compress=False).text.rstrip()
 
 @samweb_method
 def runProject(samweb, projectname=None, defname=None, snapshot_id=None, callback=None,

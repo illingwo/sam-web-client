@@ -39,12 +39,12 @@ def getAvailableDimensions(samweb):
     return convert_from_unicode(result.json())
 
 @samweb_method
-def _callDimensions(samweb, url, dimensions, params=None,stream=False):
+def _callDimensions(samweb, url, dimensions, params=None,stream=False, compress=True):
     """ Call the requested method with a dimensions string, 
     automatically switching from GET to POST as needed """
     if params is None: params = {}
     else: params = params.copy()
-    kwargs = {'params':params, 'stream':stream}
+    kwargs = {'params':params, 'stream':stream, 'compress': compress}
     if len(dimensions) > 1024:
         kwargs['data'] = {'dims':dimensions}
         method = samweb.postURL
@@ -76,7 +76,7 @@ def listFiles(samweb, dimensions=None, defname=None, fileinfo=False, stream=Fals
     if fileinfo:
         params['fileinfo'] = 1
     if defname is not None:
-        result = samweb.getURL('/definitions/name/%s/files/list' % escape_url_component(defname), params=params,stream=True)
+        result = samweb.getURL('/definitions/name/%s/files/list' % escape_url_component(defname), params=params,stream=True,compress=True)
     else:
         result = samweb._callDimensions('/files/list', dimensions, params, stream=True)
     if fileinfo:
@@ -127,7 +127,7 @@ def countFiles(samweb, dimensions=None, defname=None):
     if defname is not None:
         result = samweb.getURL('/definitions/name/%s/files/count' % escape_url_component(defname))
     else:
-        result = samweb._callDimensions('/files/count', dimensions)
+        result = samweb._callDimensions('/files/count', dimensions, compress=False)
     return long(result.text.strip())
 
 @samweb_method
@@ -146,7 +146,7 @@ def listFilesAndLocations(samweb, filter_path=None, dimensions=None, defname=Non
         params['defname'] = defname
     if checksums:
         params['checksums'] = True
-    result = samweb.postURL('/files/list/locations?format=plain', params, stream=True)
+    result = samweb.postURL('/files/list/locations?format=plain', params, stream=True, compress=True)
     if structured_output:
         def _format_output():
             for l in result.iter_lines():
@@ -178,7 +178,7 @@ def locateFile(samweb, filenameorid):
         name or id of file
     """
     url = _make_file_path(filenameorid) + '/locations'
-    result = samweb.getURL(url)
+    result = samweb.getURL(url, compress=False)
     return convert_from_unicode(result.json())
 
 @samweb_method
@@ -198,7 +198,7 @@ def locateFiles(samweb, filenameorids):
     params = {}
     if file_names: params["file_name"] = file_names
     if file_ids: params["file_id"] = file_ids
-    response = samweb.getURL("/files/locations", params=params)
+    response = samweb.getURL("/files/locations", params=params, compress=True)
     return convert_from_unicode(response.json())
 
 @samweb_method
@@ -259,7 +259,7 @@ def getMetadata(samweb, filenameorid, locations=False):
     """
     params = {}
     if locations: params['locations'] = True
-    response = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params=params)
+    response = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params=params, compress=True)
     return convert_from_unicode(response.json())
 
 @samweb_method
@@ -286,7 +286,7 @@ def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False):
     if file_ids: params["file_id"] = file_ids
     if locations: params["locations"] = 1
     # use post because the lists cab be large
-    response = samweb.postURL("/files/metadata", data=params)
+    response = samweb.postURL("/files/metadata", data=params, compress=True)
     if asJSON:
         return response.text.rstrip()
     else:
@@ -315,7 +315,7 @@ def getMetadataText(samweb, filenameorid, format=None, locations=False):
     if format is None: format='plain'
     params = {'format':format}
     if locations: params['locations'] = 1
-    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params=params)
+    result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params=params, compress=True)
     return result.text.rstrip()
 
 @samweb_method

@@ -16,7 +16,7 @@ def listDefinitions(samweb, stream=False, **queryCriteria):
     """
     params = dict(queryCriteria)
     params['format'] = 'plain'
-    result = samweb.getURL('/definitions/list', params, stream=True)
+    result = samweb.getURL('/definitions/list', params, stream=True, compress=True)
     output = ifilter( None, (l.strip() for l in result.iter_lines()) )
     if stream: return output
     else: return list(output)

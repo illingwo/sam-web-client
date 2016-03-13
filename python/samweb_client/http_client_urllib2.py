@@ -206,15 +206,15 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
         SAMWebHTTPClient.__init__(self, *args, **kwargs)
         self._opener = urllib2.build_opener(HTTP307RedirectHandler())
 
-    def _doURL(self, url, method='GET', params=None, data=None, content_type=None, stream=False, headers=None,role=None):
+    def _doURL(self, url, method='GET', params=None, data=None, content_type=None, stream=False, compress=False, headers=None,role=None):
         request_headers = self.get_default_headers()
         if headers is not None:
             request_headers.update(headers)
         if content_type:
             request_headers['Content-Type'] = content_type
 
-        if stream:
-            # only enable gzipped encoding for streamed data since that might be large
+        if compress or stream:
+            # enable gzipped encoding for streamed data since that might be large
             request_headers['Accept-Encoding'] = 'gzip'
 
         if role is not None:

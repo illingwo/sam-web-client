@@ -73,7 +73,7 @@ class RequestsHTTPClient(SAMWebHTTPClient):
         SAMWebHTTPClient.use_client_certificate(self, cert, key)
         self._session = None # This will clear any existing session with a different cert
 
-    def _doURL(self, url, method="GET", content_type=None, role=None, stream=False, *args, **kwargs):
+    def _doURL(self, url, method="GET", content_type=None, role=None, stream=False, compress=True, *args, **kwargs):
         headers = self.get_default_headers()
         if 'headers' in kwargs:
             headers.update(kwargs['headers'])
@@ -83,6 +83,10 @@ class RequestsHTTPClient(SAMWebHTTPClient):
 
         if role is not None:
             headers['SAM-Role'] = str(role)
+
+        # requests uses compression by default
+        if not compress:
+            headers['Accept-Encoding'] = None
         
         kwargs['headers'] = headers
 

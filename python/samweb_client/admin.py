@@ -14,7 +14,7 @@ def addApplication(samweb, family, name, version):
 
 @samweb_method
 def listUsers(samweb):
-    result = samweb.getURL('/users')
+    result = samweb.getURL('/users', compress=True)
     return convert_from_unicode(result.json())
 
 @samweb_method
@@ -69,7 +69,7 @@ def listValues(samweb, vtype):
         vtype: string with values to return (ie data_tiers, groups)
     """
     try:
-        return convert_from_unicode(samweb.getURL('/values/%s' % escape_url_path(vtype)).json())
+        return convert_from_unicode(samweb.getURL('/values/%s' % escape_url_path(vtype), compress=True).json())
     except HTTPNotFound, ex:
         raise Error("Unknown value type '%s'" % vtype)
 
@@ -93,7 +93,7 @@ def addValue(samweb, vtype, *args, **kwargs):
 @samweb_method
 def listParameters(samweb):
     """ list defined parameters """
-    return convert_from_unicode(samweb.getURL('/values/parameters').json())
+    return convert_from_unicode(samweb.getURL('/values/parameters', compress=True).json())
 
 @samweb_method
 def listParameterValues(samweb, param):
@@ -101,7 +101,7 @@ def listParameterValues(samweb, param):
     arguments:
         param: parameter name
     """
-    result = samweb.getURL('/values/parameters/%s?format=json' % escape_url_path(param))
+    result = samweb.getURL('/values/parameters/%s?format=json' % escape_url_path(param), compress=True)
     return convert_from_unicode(result.json())
 
 @samweb_method
@@ -118,7 +118,7 @@ def addParameter(samweb, name, data_type, category=None):
 @samweb_method
 def listDataDisks(samweb):
     """ list defined data disks """
-    return convert_from_unicode(samweb.getURL('/values/data_disks').json())
+    return convert_from_unicode(samweb.getURL('/values/data_disks', compress=True).json())
 
 @samweb_method
 def addDataDisk(samweb, mount_point):
