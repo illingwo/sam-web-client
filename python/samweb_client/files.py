@@ -10,10 +10,8 @@ try:
     from collections import namedtuple
 except ImportError:
     def fileinfo(*args): return tuple(args)
-    def file_location(*args): return tuple(args)
 else:
     fileinfo = namedtuple("fileinfo", ["file_name", "file_id", "file_size", "event_count"])
-    file_location = namedtuple("file_location", ["path", "file_name", "file_size", "checksum"])
 
 def _make_file_info(lines):
     for l in lines:
@@ -131,7 +129,7 @@ def countFiles(samweb, dimensions=None, defname=None):
     return long(result.text.strip())
 
 @samweb_method
-def listFilesAndLocations(samweb, filter_path=None, dimensions=None, defname=None, checksums=False, structured_output=True):
+def listFilesAndLocations(samweb, filter_path=None, dimensions=None, defname=None, checksums=False, schema=None, structured_output=True):
     """ List files and their locations based on location path, and dimensions or defname
     arguments:
         path_filter: string or list of strings (default None)
@@ -146,17 +144,19 @@ def listFilesAndLocations(samweb, filter_path=None, dimensions=None, defname=Non
         params['defname'] = defname
     if checksums:
         params['checksums'] = True
+    if schema:
+        params['schema'] = schema
     result = samweb.postURL('/files/list/locations?format=plain', params, stream=True, compress=True)
     if structured_output:
         def _format_output():
             for l in result.iter_lines():
                 l = l.strip()
-                fields = l.split('\t')
-                if len(fields) == 3: fields.append(None)
-                else:
-                    if fields[3]: fields[3] = fields[3].split(';')
-                    else: fields[3] = []
-                yield file_location(*fields[:4])
+                if l:
+                    fields = l.split('\t')
+                    if checksums:
+                        if fields[-1]: fields[-1] = fields[-1].split(';')
+                        else: fields[-1] = []
+                    yield tuple(*fields)
         output = _format_output()
     else:
         output = ifilter( None, (l.strip() for l in result.iter_lines()) )

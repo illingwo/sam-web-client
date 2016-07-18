@@ -248,17 +248,18 @@ class URLLib2HTTPClient(SAMWebHTTPClient):
                 return Response(self._opener.open(request, **kwargs), stream=stream, logger=self._logger)
             except HTTPError, x:
                 #python 2.4 treats 201 and up as errors instead of normal return codes
+                err_response = Response(x, logger=self._logger)
                 if 201 <= x.code <= 299:
-                    return Response(x, logger=self._logger)
+                    return err_response
                 if x.headers.get('Content-Type') == 'application/json':
-                    err = json.load(x)
+                    err = err_response.json()
                     errmsg = err['message']
                     errtype = err['error']
                 else:
                     if x.code >= 500:
                         errmsg = "HTTP error: %d %s" % (x.code, x.msg)
                     else:
-                        errmsg = x.read().rstrip()
+                        errmsg = err_response.text.rstrip()
                     errtype = None
                 x.close() # ensure that the socket is closed (otherwise it may hang around in the traceback object)
                 # retry server errors

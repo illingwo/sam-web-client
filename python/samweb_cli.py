@@ -99,14 +99,18 @@ class listFileLocationsCmd(CmdBase):
     name = "list-file-locations"
     description = "List locations and files matching a query"
     options = [ ("dimensions=", "Dimension query"), ("defname=", "Definition name"), ("filter-path=", "Comma separated list of path prefixes to filter on"),
-                ("checksums", "Include checksums in output")]
+                ("checksums", "Include checksums in output"), "schema=", "File access url schema"]
     cmdgroup = 'datafiles'
     def run(self, options, args):
         if options.filter_path:
             filter_path = options.filter_path.split(',')
         else:
             filter_path = None
-        output = self.samweb.listFilesAndLocations(dimensions=options.dimensions, defname=options.defname, filter_path=filter_path, checksums=options.checksums, structured_output=False)
+        if options.schema:
+            schema = options.schema.split(',')
+        else:
+            schema = None
+        output = self.samweb.listFilesAndLocations(dimensions=options.dimensions, defname=options.defname, filter_path=filter_path, checksums=options.checksums, schema=schema, structured_output=False)
         for l in output:
             print l
 
