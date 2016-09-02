@@ -75,17 +75,7 @@ class SAMWebHTTPClient(object):
     socket_timeout = property(get_socket_timeout, set_socket_timeout)
 
     def make_ssl_error(self, msg):
-        """ Try to make sense of ssl errors and return a suitable exception object """
-        if 'error:14094410' in msg:
-            if self._cert:
-                errmsg = "SSL error: %s: is client certificate valid?" % msg
-            else:
-                errmsg = "SSL error: %s: no client certificate found" % msg
-        elif 'SSL_CTX_use_PrivateKey_file' in msg:
-            errmsg = "SSL error: unable to open private key file"
-        else:
-            errmsg = "SSL error: %s" % msg
-        return SAMWebSSLError(errmsg)
+        return make_ssl_error(msg, self._cert)
 
     @staticmethod
     def get_standard_certificate_path():

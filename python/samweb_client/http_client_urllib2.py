@@ -7,7 +7,7 @@ from urllib2 import urlopen, URLError, HTTPError, Request
 import time, socket, os, sys, zlib
 
 from samweb_client import Error, json
-from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, SAMWebHTTPError
+from http_client import SAMWebHTTPClient, SAMWebConnectionError, makeHTTPError, SAMWebHTTPError, make_ssl_error
 
 def get_client():
     # There is no local state, so just return the module
@@ -106,6 +106,8 @@ class Response(object):
             self._wrapped.close()
         except: pass
 
+
+
 # handler to cope with client certificate auth
 # Note that this does not verify the server certificate
 # Since the main purpose is for the server to authenticate
@@ -120,9 +122,14 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
                 self.cert = self.key = cert
             else:
                 self.cert, self.key = cert
+        else:
+            self.cert = self.key = None
+
+    def _get_https_connection_args(self):
+        if self.cert:
             try:
                 # python 2.7.9 support
-                from ssl import create_default_context, CERT_NONE
+                from ssl import create_default_context, CERT_NONE, SSLError
                 """ could allow verification with something like
                 context = create_default_context(capath="/etc/grid-security/certificates")
                 """
@@ -132,13 +139,16 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
                 context.verify_mode = CERT_NONE
 
                 # load the client cert
-                context.load_cert_chain(self.cert, self.key)
-                self.connargs = { 'context' : context }
+                try:
+                    context.load_cert_chain(self.cert, self.key)
+                except IOError, ex:
+                    raise make_ssl_error(ex, self.cert)
+                return { 'context' : context }
             except ImportError:
                 # older python
-                self.connargs = { "key_file" : self.key, "cert_file" : self.cert }
+                return { "key_file" : self.key, "cert_file" : self.cert }
         else:
-            self.connargs = {}
+            return {}
 
     def https_open(self, req):
         # Rather than pass in a reference to a connection class, we pass in
@@ -147,7 +157,7 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=300):
-        return httplib.HTTPSConnection(host, **self.connargs)
+        return httplib.HTTPSConnection(host, **self._get_https_connection_args())
 
 class HTTP307RedirectHandler(urllib2.HTTPRedirectHandler):
 

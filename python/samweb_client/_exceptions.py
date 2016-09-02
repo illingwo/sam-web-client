@@ -170,6 +170,28 @@ class _Exceptions(object):
             base._code = code
             return base
 
+    def make_ssl_error(self, ex, cert=None):
+        """ Try to make sense of ssl errors and return a suitable exception object """
+        if isinstance(ex, IOError):
+            msg = "%s: unable to load certificate and/or key file" % str(ex)
+        else:
+            msg = str(ex)
+            if 'error:14094410' in msg:
+                if cert:
+                    msg = "%s: is client certificate valid?" % msg
+                else:
+                    msg = "%s: no client certificate found" % msg
+            elif 'SSL_CTX_use_PrivateKey_file' in msg:
+                msg = "%s: unable to open private key file" % msg
+            elif 'PEM lib' in msg:
+                msg = "%s: unable to load certificate and/or key file" % msg
+            elif 'CERTIFICATE_VERIFY_FAILED' in msg:
+                if cert:
+                    msg = "%s: is client certificate valid?" % msg
+                else:
+                    msg = "%s: no client certificate found" % msg
+        return SAMWebSSLError("SSL error: " + msg)
+
 # Add the exception classes the _Exceptions.__all__ so that "from exceptions import *" will work
 import types
 for k,v in globals().items():
@@ -179,5 +201,5 @@ for k,v in globals().items():
 # These don't inherit from Error
 _Exceptions.NoMoreFiles = NoMoreFiles
 _Exceptions.Timeout = Timeout
-_Exceptions.__all__.extend( ('NoMoreFiles','Timeout') )
+_Exceptions.__all__.extend( ('NoMoreFiles','Timeout', 'make_ssl_error') )
 
