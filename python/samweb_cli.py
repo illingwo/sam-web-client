@@ -12,6 +12,7 @@ class CmdError(Error): pass
 class CmdBase(object):
     cmdgroup = None
     description = None
+    hidden = False # if true don't show in list of commands
     args = None
     options = ()
 
@@ -968,9 +969,18 @@ class modifyUserCmd(CmdBase):
         self.samweb.modifyUser(username, **args)
         print "User '%s' has been updated" % username
 
+
 commands = {
        }
 command_groups = {}
+
+class listCommandsCmd(CmdBase):
+    name = 'list-cli-commands'
+    description = 'list available commands'
+    hidden = True
+    def run(self, options, args):
+        for cmd in (c for c, co in sorted(commands.items()) if not co.hidden):
+            print cmd
 
 group_descriptions = {
         # The admin group should go last, as normal users don't care
@@ -987,7 +997,7 @@ for o in locals().values():
     try:
         if issubclass(o, CmdBase) and hasattr(o, 'name') and o.name not in commands:
             commands[o.name] = o
-            command_groups.setdefault(o.cmdgroup,[]).append(o.name)
+            command_groups.setdefault(o.cmdgroup,[]).append(o)
     except TypeError: pass
 
 def command_list():
@@ -1001,10 +1011,13 @@ def command_list():
     for g in sorted(command_groups, key=sort_groups):
         if g is None: group_desc = 'Uncategorized'
         else: group_desc = group_descriptions.get(g, (g,) )[0]
-        s.append("  %s:" % group_desc)
-        for c in sorted(command_groups[g]):
-            s.append("    %s" % c)
-        s.append('')
+        # only display groups where the contents aren't all hidden
+        gs = ["  %s:" % group_desc]
+        for c in ( c for c in sorted(command_groups[g], key=operator.attrgetter('name')) if not c.hidden):
+            gs.append("    %s" % c.name)
+        if len(gs) > 1:
+            s.extend(gs)
+            s.append('')
     return '\n'.join(s)
 
 def _list_commands(option, opt, value, parser):
