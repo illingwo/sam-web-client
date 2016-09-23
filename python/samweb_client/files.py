@@ -374,6 +374,21 @@ def modifyFileMetadata(samweb, filename, md=None, mdfile=None):
     return samweb.putURL(url + "/metadata", data=data, content_type='application/json', secure=True, role='*').text
 
 @samweb_method
+def modifyMetadata(samweb, md=None, mdfile=None, continue_on_error=False):
+    """ Modify metadata for one or more files
+The metadata must be in the form of a list of metadata objects containing the file_name and the fields to change
+    arguments:
+        md: dictionary containing metadata (default None)
+        mdfile: file object containing metadata (must be in json format)
+        continue_on_error: If true an error in a file's metadata will not prevent the other files from being modified
+    """
+    if md:
+        data = json.dumps(md)
+    else:
+        data = mdfile.read()
+    return samweb.putURL('/files', params={'continue_on_error': continue_on_error}, data=data, content_type='application/json', secure=True, role='*').json()
+
+@samweb_method
 def retireFile(samweb, filename):
     """ Retire a file:
     arguments:

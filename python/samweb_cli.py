@@ -287,7 +287,7 @@ class validateFileMetadata(CmdBase):
 
 class declareFileCmd(CmdBase):
     name = 'declare-file'
-    description = "Declare a new file into the database"
+    description = "Declare new files into the database. The metadata file should be either a single JSON object with metadata or a list of them."
     args = "<name of metadata file (json format)>"
     cmdgroup = 'datafiles'
 
@@ -306,22 +306,33 @@ class declareFileCmd(CmdBase):
 
 class modifyMetadataCmd(CmdBase):
     name = 'modify-metadata'
-    description = "Modify metadata for an existing file"
-    args = "<file name> <name of file containing metadata parameters to modify (json format)>"
+    description = """Modify metadata for an existing file. If no file name is given as an argument the metadata file must contain a list of JSON objects containing the file name and fields to modify
+If the file name is given the metadata file must be a single JSON object containing the fields to modify"""
+    args = "[<file name>] <name of file containing metadata parameters to modify (json format)>"
     cmdgroup = 'datafiles'
 
     def run(self, options, args):
-        if len(args) != 2:
+        if len(args) == 1:
+            mdfile = args[0]
+            file_name = None
+        elif len(args) == 2:
+            file_name = args[0]
+            mdfile = args[1]
+        else:
             raise CmdError("Invalid arguments provided")
         try:
-            f = open(args[1])
+            f = open(mdfile)
         except IOError, ex:
-            raise CmdError("Failed to open file: %s: %s" % (args[1], str(ex)))
+            raise CmdError("Failed to open file: %s: %s" % (mdfile, str(ex)))
         try:
-            self.samweb.modifyFileMetadata(args[0], mdfile=f)
+            if file_name:
+                self.samweb.modifyFileMetadata(file_name, mdfile=f)
+                print "Metadata has been updated for file '%s'" % file_name
+            else:
+                self.samweb.modifyMetadata(mdfile=f)
+                print "Metadata has been updated"
         finally:
             f.close()
-        print "Metadata has been updated for file '%s'" % args[0]
 
 class retireFileCmd(CmdBase):
     name = 'retire-file'
