@@ -165,7 +165,7 @@ class SAMWebClient(object):
     def _doURL(self, method, url, params=None, data=None, secure=None, role=None, *args, **kwargs):
         secure = secure or self.secure 
         url = self._prepareURL(url, secure)
-        if secure: kwargs['role'] = role or self.role
+        kwargs['role'] = role or self.role
         return method(url, params=params, data=data, *args, **kwargs)
 
     def get_verbose(self):
