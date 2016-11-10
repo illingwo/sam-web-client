@@ -52,11 +52,13 @@ def _file_list_str_gen(g, fileinfo):
 
 class listFilesCmd(CmdBase):
     name = "list-files"
-    options = [ ("dump-query", "Return query information for these dimensions instead of evaluating them"),
+    options = [ 
                 ("fileinfo", "Return additional information for each file"),
                 ("summary", "Return a summary of the results instead of the full list"),
+                ("expand-query", "Return an expanded and normalized version of the query"),
                 ("help-dimensions", "Return information on the available dimensions"),
-                ]
+                ("dump-query", "Return query information for these dimensions instead of evaluating them"),
+              ]
 
     description = "List files by dimensions query"
     cmdgroup = 'datafiles'
@@ -69,7 +71,9 @@ class listFilesCmd(CmdBase):
         dims = (' '.join(args)).strip()
         if not dims:
             raise CmdError("No dimensions specified")
-        if options.dump_query:
+        if options.expand_query:
+            print self.samweb.expandDims(dims).get('query','')
+        elif options.dump_query:
             if options.summary: mode = 'summary'
             else: mode = None
             print self.samweb.parseDims(dims, mode)
@@ -171,7 +175,7 @@ class getMetadataCmd(CmdBase):
     name = 'get-metadata'
     description = "Get metadata for a file"
     args = "<file name>"
-    options = [ ("locations", "Include locations in output (requires --json)") ]
+    options = [ ("locations", "Include locations in output (requires --json)"), ("basic", "Basic metadata only")]
     cmdgroup = 'datafiles'
 
     def addOptions(self, parser):
@@ -181,10 +185,10 @@ class getMetadataCmd(CmdBase):
         if len(args) < 1:
             raise CmdError("No argument specified")
         elif len(args) == 1:
-            print self.samweb.getMetadataText(args[0],format=options.format, locations=options.locations)
+            print self.samweb.getMetadataText(args[0],format=options.format, locations=options.locations, basic=options.basic)
         else:
             if options.format != 'json': raise CmdError("Multiple metadata requires --json format")
-            print self.samweb.getMultipleMetadata(args, locations=options.locations, asJSON=True)
+            print self.samweb.getMultipleMetadata(args, locations=options.locations, basic=options.basic, asJSON=True)
 
 class fileLineage(CmdBase):
     name = 'file-lineage'
@@ -391,13 +395,16 @@ class listDefinitionFilesCmd(CmdBase):
     description = "List files in a dataset definition"
     args = "<dataset definition>"
     options = [ ("fileinfo", "Return additional information for each file"),
+                ("expand-query", "Return an expanded and normalized version of the query"),
                 ("summary", "Return a summary of the results instead of the full list"),
                 ]
     cmdgroup = 'definitions'
     def run(self, options, args):
         if len(args) != 1:
             raise CmdError("Argument should be exactly one definition name")
-        if options.summary:
+        if options.expand_query:
+            print self.samweb.expandDims(defname=args[0]).get('query','')
+        elif options.summary:
             print _file_list_summary_str(self.samweb.listFilesSummary(defname=args[0]))
         else:
             fileinfo = options.fileinfo

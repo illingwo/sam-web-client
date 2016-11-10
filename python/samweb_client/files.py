@@ -97,6 +97,12 @@ def listFilesSummary(samweb, dimensions=None, defname=None):
     return convert_from_unicode(result.json())
 
 @samweb_method
+def expandDims(samweb, dimensions):
+    """ Expand the given dimensions """
+    result = samweb._callDimensions('/files/expand_query', dimensions)
+    return result.json()
+
+@samweb_method
 def parseDims(samweb, dimensions, mode=False):
     """ For debugging only """
     if not mode:
@@ -251,19 +257,21 @@ def getFileAccessUrls(samweb, filenameorid, schema, locationfilter=None):
     return convert_from_unicode(response.json())
 
 @samweb_method
-def getMetadata(samweb, filenameorid, locations=False):
+def getMetadata(samweb, filenameorid, locations=False, basic=False):
     """ Return metadata as a dictionary 
     arguments:
         name or id of file
         locations: if True, also return file locations
+        basic: if True, only return basic metadata
     """
     params = {}
     if locations: params['locations'] = True
+    if basic: params['basic'] = 1
     response = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params=params, compress=True)
     return convert_from_unicode(response.json())
 
 @samweb_method
-def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False):
+def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False, basic=False):
     """ Return a list of metadata dictionaries
     (This method does not return an error if a
     file does not exist; instead it returns no
@@ -272,6 +280,7 @@ def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False):
         list of file names or ids
         locations: if True include location information
         asJSON: return the undecoded JSON string instead of python objects
+        basic: if true, return basic metadata only
     """
     file_names = []
     file_ids = []
@@ -285,6 +294,7 @@ def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False):
     if file_names: params["file_name"] = file_names
     if file_ids: params["file_id"] = file_ids
     if locations: params["locations"] = 1
+    if basic: params['basic'] = 1
     # use post because the lists cab be large
     response = samweb.postURL("/files/metadata", data=params, compress=True)
     if asJSON:
@@ -293,28 +303,32 @@ def getMultipleMetadata(samweb, filenameorids, locations=False, asJSON=False):
         return convert_from_unicode(response.json())
 
 @samweb_method
-def getMetadataIterator(samweb, iterable, locations=False, chunksize=50):
+def getMetadataIterator(samweb, iterable, locations=False, basic=False, chunksize=50):
     """ Given an iterable of file names or ids, return an iterable object with
     their metadata. This is a convenience wrapper around getMultipleMetadata
     arguments:
         iterable: iterable object of file names or ids
         locations: if True include location information
+        basic: if True, return basic metadata only
         chunksize: the number of files to query on each pass
     """
 
     for fs in _chunk(iter(iterable), chunksize):
-        for md in samweb.getMultipleMetadata(fs, locations=locations):
+        for md in samweb.getMultipleMetadata(fs, locations=locations, basic=basic):
             yield md
 
 @samweb_method
-def getMetadataText(samweb, filenameorid, format=None, locations=False):
+def getMetadataText(samweb, filenameorid, format=None, locations=False, basic=False):
     """ Return metadata as a string
     arguments:
         name or id of file
+        locations: if True include location information
+        basic: if True, return basic metadata only
     """
     if format is None: format='plain'
     params = {'format':format}
     if locations: params['locations'] = 1
+    if basic: params['basic'] = 1
     result = samweb.getURL(_make_file_path(filenameorid) + '/metadata', params=params, compress=True)
     return result.text.rstrip()
 
