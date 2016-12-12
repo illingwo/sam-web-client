@@ -17,8 +17,11 @@ class ArgumentError(Error):
 class NoMoreFiles(Exception):
   pass
 
-class ArgumentError(Error):
-    """ For methods called with incorrect arguments """
+class ChecksumMismatch(Error):
+    """ For mismatched checksums """
+
+class MissingChecksum(ChecksumMismatch):
+    """ Can't verify checksum because there's nothing to compare against """
 
 class Timeout(Exception): pass
 

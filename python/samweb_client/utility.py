@@ -7,7 +7,8 @@ from exceptions import *
 # value of 0, instead of 1, and adler32 returns a signed int (ie 32 bits)
 # while we want an unsigned value
 
-
+class UnknownHashAlgorithm(Error):
+    """ Unknown checksum algorithm """
 
 def fileChecksum(path, checksum_types=None, oldformat=False):
     """Calculate enstore compatible CRC value"""
@@ -111,7 +112,7 @@ def _make_hash(algorithm):
         except ValueError:
             pass
 
-    raise Error("No checksum algorithm for %s" % algorithm)
+    raise UnknownHashAlgorithm("No checksum algorithm for %s" % algorithm)
 
 def _get_checksum_algorithm(algorithm):
 

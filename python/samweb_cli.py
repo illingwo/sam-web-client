@@ -260,6 +260,31 @@ class calculateChecksumCmd(CmdBase):
                 except Error, ex:
                     print "%s: %s" % (a, ex)
 
+class verifyFileChecksumCmd(CmdBase):
+    name = 'verify-file-checksum'
+    description = ( 'Verify a checksum for a file against the database' )
+    args = "<path to file> [<path to file> [...]]"
+    options = [ ('checksum=', 'A comma separated list of checksums for a file to be verified. If this is provided only one filename can be given.') ]
+    cmdgroup = 'datafiles'
+
+    def run(self, options, args):
+        success = True
+        if options.checksum:
+            if len(args) != 1:
+                raise CmdError("If checksum option is given then exactly one filename must be provided")
+            checksums = options.checksum.split(',')
+        else:
+            checksums = None
+
+        for a in args:
+            try:
+                self.samweb.verifyFileChecksum(a, checksum=checksums)
+                print '%s: Valid' % a
+            except ChecksumMismatch, ex:
+                print '%s: %s' % (a, ex)
+                success = False
+        if not success: return 1
+
 class validateFileMetadata(CmdBase):
     name = 'validate-metadata'
     description = "Check file metadata for correctness"

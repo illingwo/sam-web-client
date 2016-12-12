@@ -411,3 +411,64 @@ def retireFile(samweb, filename):
     url = _make_file_path(filename) + '/retired_date'
     return samweb.postURL(url, secure=True, role='*').text
 
+@samweb_method
+def verifyFileChecksum(samweb, path, checksum=None, algorithms=None):
+    """ Verify a file checksum for a file
+Throws a ChecksumMismatch exception if they don't match
+    arguments:
+        path: either the filename or the path to the physical file. The path must be given is checksum is None (default None)
+        checksum: a list of checksums to verify against. If given the file will not be opened (default None)
+        algorithms: a list of preferred algorithms, in order
+    """
+
+    import os.path
+    filename = os.path.basename(path)
+
+    # get the checksum from the database
+    md = samweb.getMetadata(filename, basic=True)
+    db_checksum = md.get('checksum')
+
+    if not db_checksum:
+        raise MissingChecksum("File has no checksum")
+
+    input_checksums = {}
+    for c in db_checksum:
+        algo = c.split(':',1)[0]
+        input_checksums[algo] = c
+
+    # make a preference list of algorithms
+    if algorithms is None:
+        algorithms = ['sha512','sha256','sha1','md5','adler32','enstore']
+    possible_algorithms = list(set(algorithms).intersection(input_checksums))
+    if not possible_algorithms:
+        raise MissingChecksum("No compatible checksum algorithm")
+    # this isn't a very efficient sort - the key function is O(n) in the number of algorithms, but that is small
+    possible_algorithms.sort(key=lambda k: algorithms.index(k))
+
+    # if we are provided with an input checksum, then use that
+    # else read the file to calculate one
+    if checksum:
+        local_checksums = {}
+        for local_checksum in checksum:
+            algo = local_checksum.split(':',1)[0]
+            local_checksums[algo] = local_checksum
+        def get_local_checksum(algorithm):
+            return local_checksums.get(algorithm)
+    else:
+        def get_local_checksum(algorithm):
+            import utility
+            try:
+                return utility.fileChecksum(path, checksum_types=[algorithm])[0]
+            except utility.UnknownHashAlgorithm:
+                return None
+
+    # try algorithms until we find one that works
+    for algorithm in possible_algorithms:
+        localchecksum = get_local_checksum(algorithm)
+        if localchecksum is None:
+            continue
+        if localchecksum != input_checksums[algorithm]:
+            raise ChecksumMismatch("Checksum mismatch: expecting %s, got %s" % (input_checksums[algorithm], localchecksum))
+        return True
+    else:
+        raise MissingChecksum("Unable to calculate checksum - no matching algorithms available")
