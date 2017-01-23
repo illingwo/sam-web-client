@@ -179,20 +179,15 @@ class _Exceptions(object):
             msg = "%s: unable to load certificate and/or key file" % str(ex)
         else:
             msg = str(ex)
-            if 'error:14094410' in msg:
+            if 'sslv3 alert handshake failure' in msg or 'error:14094410' in msg or 'CERTIFICATE_VERIFY_FAILED' in msg:
                 if cert:
-                    msg = "%s: is client certificate valid?" % msg
+                    msg = "%s: is client certificate or proxy valid?" % msg
                 else:
-                    msg = "%s: no client certificate found" % msg
+                    msg = "%s: no client certificate or proxy found" % msg
             elif 'SSL_CTX_use_PrivateKey_file' in msg:
                 msg = "%s: unable to open private key file" % msg
             elif 'PEM lib' in msg:
                 msg = "%s: unable to load certificate and/or key file" % msg
-            elif 'CERTIFICATE_VERIFY_FAILED' in msg:
-                if cert:
-                    msg = "%s: is client certificate valid?" % msg
-                else:
-                    msg = "%s: no client certificate found" % msg
         return SAMWebSSLError("SSL error: " + msg)
 
 # Add the exception classes the _Exceptions.__all__ so that "from exceptions import *" will work
